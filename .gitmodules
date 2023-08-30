@@ -1,0 +1,3 @@
+[submodule "src/AttoDRY"]
+	path = src/AttoDRY
+	url = https://github.com/ileu/AttoDRY.git
