@@ -21,6 +21,7 @@ class Axis(PositionQty):
         :return:
         """
         self.update_position()
+        self.check_moving_axis()
         return self._position
 
     @position_m.setter
@@ -32,14 +33,28 @@ class Axis(PositionQty):
         """
         self._position = pos_m
 
-        if pos_m * 1e9 > 2 ** 47 / 1000 or pos_m < 0:
+        if pos_m * 1e9 > 2 ** 47 / 1000 or pos_m < 2e-3 or pos_m > 10e-3:
             raise OverflowError("Position is oOut of axis limit")
         self.device.move.setControlTargetPosition(self.index, pos_m * 1e9)
+        # allow for moving axis
         self.device.control.setControlMove(self.index, True)
-
     def update_position(self):
         """
         Updates the position of the axis
         :return:
         """
         self._position = self.device.move.getPosition(self.index) * 1e-9
+
+    def check_moving_axis(self):
+        if self.device.status.getStatusTargetRange(self.index):
+            self.device.control.setControlMove(self.index, False)
+    def activate_axis(self):
+        # activate axis
+        self.device.control.setControlOutput(self.index, True)
+
+    def disconnect_axis(self):
+        # stop the approach
+        self.device.control.setControlMove(self.index, False)
+
+        # deactivate axis
+        self.device.control.setControlOutput(self.index, False)

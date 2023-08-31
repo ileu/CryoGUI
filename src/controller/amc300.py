@@ -24,7 +24,7 @@ class AMC300Controller:
 
         for i in range(3):
             self.axes.append(Axis(i, self.device))
-            self.axes[i].position()  # update the position of the axis
+            # self.axes[i].position()  # update the position of the axis
 
         return True
 

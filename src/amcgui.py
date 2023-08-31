@@ -5,10 +5,10 @@ import time
 from PyQt6.QtGui import QAction
 from PyQt6.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QWidget, QInputDialog
 
-# from controller import AMC300Controller
+from controller import AMC300Controller
 from src.view import NumberWidget
 
-from controller.dummies import DummyAMC300Controller as AMC300Controller
+# from controller.dummies import DummyAMC300Controller as AMC300Controller
 
 
 class GUI(QMainWindow):
@@ -29,7 +29,7 @@ class GUI(QMainWindow):
         self.axis_widgets = []
 
         for i in range(3):
-            self.axis_widgets.append(NumberWidget(title=f"Axis {i}", unit=" nm", symbols=7))
+            self.axis_widgets.append(NumberWidget(title=f"Axis {i}", unit=r" um", symbols=7))
 
         for ax in self.axis_widgets:
             ax.deactivate()
@@ -39,11 +39,12 @@ class GUI(QMainWindow):
 
         self.update_thread = None
         self.update_thread_running = False
+        self.is_connected = False
 
     def init_menu(self):
         menubar = self.menuBar()
 
-        connect_action = QAction("Connect...", self)
+        connect_action = QAction("Connect", self)
         connect_action.triggered.connect(self.show_connect_dialog)
         menubar.addAction(connect_action)
 
@@ -52,7 +53,7 @@ class GUI(QMainWindow):
         menubar.addAction(disconnect_action)
 
     def show_connect_dialog(self):
-        ipaddress, ok = QInputDialog.getText(self, "Connect to AMC300", "IP Address")
+        ipaddress, ok = QInputDialog.getText(self, "Connect to AMC300", "IP Address", text="192.168.1.1")
 
         if ok and ipaddress:
             self.connect(ipaddress)
@@ -66,9 +67,12 @@ class GUI(QMainWindow):
         self.amcController.connect()
 
         self.statusBar().showMessage("Connected to " + ip_address)
+        self.is_connected = True
 
         for i, ax_wid in enumerate(self.axis_widgets):
-            ax_wid.positionqty = self.amcController.axes[i]
+            axis = self.amcController.axes[i]
+            ax_wid.positionqty = axis
+            axis.activate_axis()
             ax_wid.setStatus("Connected")
             ax_wid.activate()
 
@@ -80,6 +84,7 @@ class GUI(QMainWindow):
         self.amcController.disconnect()
 
         self.statusBar().showMessage("Disconnected")
+        self.is_connected = False
 
         for i, ax_wid in enumerate(self.axis_widgets):
             ax_wid.positionqty = None
@@ -90,10 +95,12 @@ class GUI(QMainWindow):
         while self.update_thread_running:
             for ax_wid in self.axis_widgets:
                 ax_wid.updateNumberDisplay()
+
             time.sleep(0.1)
 
     def closeEvent(self, event):
-        self.disconnect()
+        if self.is_connected:
+            self.disconnect()
         event.accept()
 
 

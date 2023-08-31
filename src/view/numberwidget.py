@@ -113,8 +113,8 @@ class NumberWidget(QWidget):
         self.number_input.setText(str(new_number))
 
     def updateNumberDisplay(self):
-        self.value = self.positionqty.position_nm
-        self.number_display.setText("{:.4}".format(self.value) + self.unit)
+        self.value = self.positionqty.position_um
+        self.number_display.setText("{:.7}".format(self.value) + self.unit)
 
     def setValue(self):
         try:
@@ -122,8 +122,12 @@ class NumberWidget(QWidget):
         except ValueError:
             self.status_label.setText("Status: Invalid value")
             return
-        self.positionqty.position_nm = new_number
-        self.updateNumberDisplay()
+        try:
+            self.positionqty.position_um = new_number
+        except Exception as e:
+            print(e)
+            self.status_label.setText("Error: " + e)
+            return
 
     def setStatus(self, status: str):
         self.status_label.setText("Status: " + status)
