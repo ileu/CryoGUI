@@ -4,11 +4,10 @@ import time
 
 from PyQt6.QtGui import QAction
 from PyQt6.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QWidget, QInputDialog
-
-from controller import AMC300Controller
 from src.view import NumberWidget
 
-# from controller.dummies import DummyAMC300Controller as AMC300Controller
+# from controller import AMC300Controller
+from controller.dummies import DummyAMC300Controller as AMC300Controller
 
 
 class GUI(QMainWindow):

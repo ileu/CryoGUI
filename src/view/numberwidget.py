@@ -22,6 +22,8 @@ class NumberWidget(QWidget):
         self.minus_button = QPushButton('-')
         self.set_button = QPushButton('Set')
 
+        self.gnd_button = QPushButton("GND")
+
         self.positionqty = positionqty
 
         self.symbols = symbols
@@ -74,11 +76,20 @@ class NumberWidget(QWidget):
         self.set_button.setFixedSize(40, 24)
         self.set_button.clicked.connect(self.setValue)
 
+        self.gnd_button.setStyleSheet("QPushButton {border: 2px solid black; padding-bottom: 2px; "
+                                      "border-radius: 20px; font-size: 16px;}"
+                                      "QPushButton:hover {background-color: rgb(228,241,251); }"
+                                      "QPushButton:pressed {background-color: rgb(204,228,247); }"
+                                      "QPushButton:disabled {background-color: rgb(200,200,200); }")
+        self.gnd_button.setFixedSize(40, 40)
+        # self.set_button.clicked.connect()
+
         layout = QVBoxLayout()
         text_layout = QHBoxLayout()
         text_layout.addWidget(self.title_label)
         text_layout.addStretch()
         text_layout.addWidget(self.status_label)
+        text_layout.addWidget(self.gnd_button)
         layout.addLayout(text_layout)
 
         number_input_layout = QHBoxLayout()
