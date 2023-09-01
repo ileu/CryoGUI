@@ -13,8 +13,8 @@ from PyQt6.QtWidgets import (
 )
 from src.view import NumberWidget
 
-# from controller import AMC300Controller
-from controller.dummies import DummyAMC300Controller as AMC300Controller
+from controller import AMC300Controller
+# from controller.dummies import DummyAMC300Controller as AMC300Controller
 
 
 class GUI(QMainWindow):
@@ -74,7 +74,12 @@ class GUI(QMainWindow):
     def connect(self, ip_address):
         self.ip_address = ip_address
         self.amcController = AMC300Controller(ip_address)
-        self.amcController.connect()
+        connected = self.amcController.connect()
+
+        if not connected:
+            self.statusBar().showMessage("Connection failed to " + ip_address)
+            self.is_connected = False
+            return
 
         self.statusBar().showMessage("Connected to " + ip_address)
         self.is_connected = True
