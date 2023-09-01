@@ -1,9 +1,16 @@
 import sys
 import threading
 import time
+from typing import List
 
 from PyQt6.QtGui import QAction
-from PyQt6.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QWidget, QInputDialog
+from PyQt6.QtWidgets import (
+    QApplication,
+    QMainWindow,
+    QVBoxLayout,
+    QWidget,
+    QInputDialog,
+)
 from src.view import NumberWidget
 
 # from controller import AMC300Controller
@@ -25,10 +32,12 @@ class GUI(QMainWindow):
         mainlayout = QVBoxLayout(self.central_widget)
         self.statusBar().showMessage("Disconnected")
 
-        self.axis_widgets = []
+        self.axis_widgets: List[NumberWidget] = []
 
         for i in range(3):
-            self.axis_widgets.append(NumberWidget(title=f"Axis {i}", unit=r" um", symbols=7))
+            self.axis_widgets.append(
+                NumberWidget(title=f"Axis {i}", unit=r" um", symbols=7)
+            )
 
         for ax in self.axis_widgets:
             ax.deactivate()
@@ -52,7 +61,9 @@ class GUI(QMainWindow):
         menubar.addAction(disconnect_action)
 
     def show_connect_dialog(self):
-        ipaddress, ok = QInputDialog.getText(self, "Connect to AMC300", "IP Address", text="192.168.1.1")
+        ipaddress, ok = QInputDialog.getText(
+            self, "Connect to AMC300", "IP Address", text="192.168.1.1"
+        )
 
         if ok and ipaddress:
             self.connect(ipaddress)
@@ -71,7 +82,7 @@ class GUI(QMainWindow):
         for i, ax_wid in enumerate(self.axis_widgets):
             axis = self.amcController.axes[i]
             ax_wid.positionqty = axis
-            axis.activate_axis()
+            ax_wid.gnd_button.setChecked(axis.get_status_axis())
             ax_wid.setStatus("Connected")
             ax_wid.activate()
 
@@ -94,6 +105,10 @@ class GUI(QMainWindow):
         while self.update_thread_running:
             for ax_wid in self.axis_widgets:
                 ax_wid.updateNumberDisplay()
+                ax_wid.positionqty.set_status_axis(ax_wid.gnd_button.isChecked())
+                ax_wid.status_label.setText(
+                    "Status: " + str(ax_wid.positionqty.get_status_axis())
+                )
 
             time.sleep(0.1)
 
