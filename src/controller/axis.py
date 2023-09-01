@@ -47,14 +47,10 @@ class Axis(PositionQty):
 
     def check_moving_axis(self):
         if self.device.status.getStatusTargetRange(self.index):
-            self.disable_axis_movement()
+            self.set_axis_control_move(True)
 
-    def enable_axis_movement(self):
-        self.device.control.setControlMove(self.index, True)
-
-    def disable_axis_movement(self):
-        # stop the position control of the axis
-        self.device.control.setControlMove(self.index, False)
+    def set_axis_control_move(self, b: bool):
+        self.device.control.setControlMove(self.index, b)
 
     def get_axis_movement(self) -> bool:
         return self.device.control.getControlMove(self.index)
@@ -66,3 +62,9 @@ class Axis(PositionQty):
     def deactivate_axis(self):
         # deactivate axis and ground axis
         self.device.control.setControlOutput(self.index, False)
+
+    def set_status_axis(self, status: bool):
+        self.device.control.setControlOutput(self.index, status)
+
+    def get_status_axis(self) -> bool:
+        return self.device.control.getControlOutput(self.index)

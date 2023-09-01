@@ -47,13 +47,10 @@ class DummyPosQty(PositionQty):
 
     def check_moving_axis(self):
         if self._move() - self.position_m < 1e-6:
-            self.disable_axis_movement()
+            self.set_status_axis(False)
 
-    def enable_axis_movement(self):
-        self.moving = True
-
-    def disable_axis_movement(self):
-        self.moving = False
+    def set_axis_control_move(self, b):
+        self.moving = b
 
     def get_axis_movement(self) -> bool:
         return self.moving
@@ -63,3 +60,9 @@ class DummyPosQty(PositionQty):
 
     def deactivate_axis(self):
         self.active = False
+
+    def set_status_axis(self, status):
+        self.active = status
+
+    def get_status_axis(self):
+        return self.active
