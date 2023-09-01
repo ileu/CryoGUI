@@ -32,7 +32,7 @@ class Axis(PositionQty):
         """
         self._position = pos_m
 
-        if pos_m * 1e9 > 2**47 / 1000 or pos_m < 2e-3 or pos_m > 10e-3:
+        if pos_m < 2e-3 or pos_m > 10e-3:
             raise OverflowError("Position is out of axis limit")
         self.device.move.setControlTargetPosition(self.index, pos_m * 1e9)
         # allow for moving axis

@@ -161,28 +161,45 @@ class NumberWidget(QWidget):
 
         self.setLayout(main_layout)
 
-    def incrementValue(self):
+    def _check_grounded(self):
         if not self.gnd_button.isChecked():
             self.status_label.setText("Status: Axis is grounded")
-            return
-        try:
-            new_number = float(self.incrm_input.text())
-        except ValueError:
-            new_number = 0.0
+            return True
+        return False
 
-        self.positionqty.position_um = self.value + new_number
+    def incrementValue(self):
+        if self._check_grounded():
+            return
+
+        try:
+            incr_number = float(self.incrm_input.text())
+        except ValueError:
+            incr_number = 0.0
+
+        try:
+            inp_number = float(self.number_input.text())
+        except ValueError:
+            inp_number = 0.0
+
+        self.number_input.setText(str(inp_number + incr_number))
+        self.positionqty.position_um = inp_number + incr_number
 
     def decrementValue(self):
-        if not self.gnd_button.isChecked():
-            self.status_label.setText("Status: Axis is grounded")
-            return
-        try:
-            new_number = float(self.incrm_input.text())
-        except ValueError:
-            self.status_label.setText("Error: Invalid increment")
+        if self._check_grounded():
             return
 
-        self.positionqty.position_um = self.value - new_number
+        try:
+            incr_number = float(self.incrm_input.text())
+        except ValueError:
+            incr_number = 0.0
+
+        try:
+            inp_number = float(self.number_input.text())
+        except ValueError:
+            inp_number = 0.0
+
+        self.number_input.setText(str(inp_number - incr_number))
+        self.positionqty.position_um = inp_number - incr_number
 
     def updateNumberDisplay(self):
         try:
@@ -197,9 +214,9 @@ class NumberWidget(QWidget):
             return
 
     def setValue(self):
-        if not self.gnd_button.isChecked():
-            self.status_label.setText("Status: Axis is grounded")
+        if self._check_grounded():
             return
+
         try:
             new_number = float(self.number_input.text())
         except ValueError:
@@ -221,6 +238,9 @@ class NumberWidget(QWidget):
     def activate(self):
         for widget in self.findChildren(QWidget):
             widget.setEnabled(True)
+
+        self.value = self.positionqty.position_um
+        self.number_input.setText(str(self.value))
 
     def deactivate(self):
         for widget in self.findChildren(QWidget):
