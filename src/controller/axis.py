@@ -3,7 +3,6 @@ from src.controller.amclib.AMC import Device
 
 
 class Axis(PositionQty):
-
     def __init__(self, index, device: Device):
         """
 
@@ -33,11 +32,12 @@ class Axis(PositionQty):
         """
         self._position = pos_m
 
-        if pos_m * 1e9 > 2 ** 47 / 1000 or pos_m < 2e-3 or pos_m > 10e-3:
+        if pos_m * 1e9 > 2**47 / 1000 or pos_m < 2e-3 or pos_m > 10e-3:
             raise OverflowError("Position is oOut of axis limit")
         self.device.move.setControlTargetPosition(self.index, pos_m * 1e9)
         # allow for moving axis
-        self.device.control.setControlMove(self.index, True)
+        self.enable_axis_movement()
+
     def update_position(self):
         """
         Updates the position of the axis
@@ -47,14 +47,22 @@ class Axis(PositionQty):
 
     def check_moving_axis(self):
         if self.device.status.getStatusTargetRange(self.index):
-            self.device.control.setControlMove(self.index, False)
-    def activate_axis(self):
-        # activate axis
-        self.device.control.setControlOutput(self.index, True)
+            self.disable_axis_movement()
 
-    def disconnect_axis(self):
-        # stop the approach
+    def enable_axis_movement(self):
+        self.device.control.setControlMove(self.index, True)
+
+    def disable_axis_movement(self):
+        # stop the position control of the axis
         self.device.control.setControlMove(self.index, False)
 
-        # deactivate axis
+    def get_axis_movement(self) -> bool:
+        return self.device.control.getControlMove(self.index)
+
+    def activate_axis(self):
+        # turn on axis
+        self.device.control.setControlOutput(self.index, True)
+
+    def deactivate_axis(self):
+        # deactivate axis and ground axis
         self.device.control.setControlOutput(self.index, False)
