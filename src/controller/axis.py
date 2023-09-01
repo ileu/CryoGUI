@@ -47,7 +47,7 @@ class Axis(PositionQty):
 
     def check_moving_axis(self):
         if self.device.status.getStatusTargetRange(self.index):
-            self.set_axis_control_move(True)
+            self.set_axis_control_move(False)
 
     def set_axis_control_move(self, b: bool):
         self.device.control.setControlMove(self.index, b)
