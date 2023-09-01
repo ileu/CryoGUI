@@ -69,7 +69,7 @@ class NumberWidget(QWidget):
         self.incrm_input.setFixedSize(65, 50)
         self.incrm_input.setValidator(QDoubleValidator())
         self.incrm_input.returnPressed.connect(self.incrementValue)
-        self.incrm_input.setPlaceholderText(self.unit)
+        self.incrm_input.setPlaceholderText("0")
 
         self.number_display.setAlignment(Qt.AlignmentFlag.AlignRight)
         self.number_display.setStyleSheet(
@@ -162,6 +162,9 @@ class NumberWidget(QWidget):
         self.setLayout(main_layout)
 
     def incrementValue(self):
+        if not self.gnd_button.isChecked():
+            self.status_label.setText("Status: Axis is grounded")
+            return
         try:
             new_number = float(self.incrm_input.text())
         except ValueError:
@@ -170,10 +173,14 @@ class NumberWidget(QWidget):
         self.positionqty.position_um = self.value + new_number
 
     def decrementValue(self):
+        if not self.gnd_button.isChecked():
+            self.status_label.setText("Status: Axis is grounded")
+            return
         try:
             new_number = float(self.incrm_input.text())
         except ValueError:
-            new_number = 0.0
+            self.status_label.setText("Error: Invalid increment")
+            return
 
         self.positionqty.position_um = self.value - new_number
 
@@ -190,6 +197,9 @@ class NumberWidget(QWidget):
             return
 
     def setValue(self):
+        if not self.gnd_button.isChecked():
+            self.status_label.setText("Status: Axis is grounded")
+            return
         try:
             new_number = float(self.number_input.text())
         except ValueError:
@@ -209,22 +219,12 @@ class NumberWidget(QWidget):
         self.status_label.setText("Status: " + status)
 
     def activate(self):
-        self.number_display.setEnabled(True)
-        self.number_input.setEnabled(True)
-        self.plus_button.setEnabled(True)
-        self.minus_button.setEnabled(True)
-        self.set_button.setEnabled(True)
-        self.gnd_button.setEnabled(True)
-        self.incrm_input.setEnabled(True)
+        for widget in self.findChildren(QWidget):
+            widget.setEnabled(True)
 
     def deactivate(self):
-        self.number_display.setEnabled(False)
-        self.number_input.setEnabled(False)
-        self.plus_button.setEnabled(False)
-        self.minus_button.setEnabled(False)
-        self.set_button.setEnabled(False)
-        self.gnd_button.setEnabled(False)
-        self.incrm_input.setEnabled(False)
+        for widget in self.findChildren(QWidget):
+            widget.setEnabled(False)
 
 
 if __name__ == "__main__":

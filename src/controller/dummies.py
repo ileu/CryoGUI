@@ -24,6 +24,7 @@ class DummyAMC300Controller:
 class DummyPosQty(PositionQty):
     def __init__(self, index):
         self._position = 0
+        self._target_position = 0
         self.start_time = datetime.now()
         self.index = index
         self.active = False
@@ -31,25 +32,34 @@ class DummyPosQty(PositionQty):
 
     @property
     def position_m(self):
-        return self._move()
+        if self.active:
+            self._move()
+        return self._position
 
     @position_m.setter
     def position_m(self, pos_m):
-        self.start_time = datetime.now()
-        self._position = pos_m
+        start_time = datetime.now()
+        if start_time > self.start_time:
+            self.start_time = start_time
+        self._target_position = pos_m
 
     def _move(self):
         elapsed_time = (datetime.now() - self.start_time).total_seconds()
-        if elapsed_time > 6:
-            return self._position
+        if elapsed_time > 3:
+            self._position = self._target_position
         else:
-            return self._position * elapsed_time / 6
+            self._position += (
+                elapsed_time / 3 * (self._target_position - self._position)
+            )
 
     def check_moving_axis(self):
         if self._move() - self.position_m < 1e-6:
             self.set_status_axis(False)
 
     def set_axis_control_move(self, b):
+        start_time = datetime.now()
+        if b and start_time > self.start_time:
+            self.start_time = datetime.now()
         self.moving = b
 
     def get_axis_movement(self) -> bool:

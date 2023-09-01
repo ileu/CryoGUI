@@ -106,9 +106,6 @@ class GUI(QMainWindow):
             for ax_wid in self.axis_widgets:
                 ax_wid.updateNumberDisplay()
                 ax_wid.positionqty.set_status_axis(ax_wid.gnd_button.isChecked())
-                ax_wid.status_label.setText(
-                    "Status: " + str(ax_wid.positionqty.get_status_axis())
-                )
 
             time.sleep(0.1)
 
