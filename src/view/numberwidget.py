@@ -23,7 +23,7 @@ class NumberWidget(QWidget):
         title: str = "Quantity",
         symbols: int = 7,
         unit: str = "",
-        positionqty: Axis | DummyAxis = None,
+        positionqty: Axis = None,
         **kwargs
     ):
         super().__init__(parent, **kwargs)
@@ -262,7 +262,6 @@ class NumberWidget(QWidget):
     def updateMovable(self):
         try:
             self.movable = self.positionqty.get_axis_movement()
-            print(self.movable)
         except AttributeError:
             self.status_label.setText("Error: Axis is not a position quantity")
         except Exception as e:
@@ -280,7 +279,7 @@ class NumberWidget(QWidget):
         self.updateNumberDisplay()
         self.updateGrounded()
         self.updateGroundedButton()
-        if self.grounded:
+        if not self.grounded:
             self.move_button.setEnabled(False)
         else:
             self.move_button.setEnabled(True)
@@ -312,7 +311,8 @@ class NumberWidget(QWidget):
     def activate(self):
         for widget in self.findChildren(QWidget):
             widget.setEnabled(True)
-
+        number_input_value = self.positionqty.get_target_postion()
+        self.number_input.setText(("{:.7}".format(number_input_value * 1e-3)))
         self.update()
 
     def deactivate(self):
