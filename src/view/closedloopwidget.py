@@ -16,7 +16,7 @@ from src.controller.axis import Axis
 from src.controller.dummies import DummyAxis
 
 
-class NumberWidget(QWidget):
+class ClosedLoopWidget(QWidget):
     def __init__(
         self,
         parent: QWidget = None,
@@ -170,7 +170,7 @@ class NumberWidget(QWidget):
         control_layout.addLayout(input_layout)
 
         increment_layout = QHBoxLayout()
-        increment_layout.setSpacing(2)
+
         increment_layout.addWidget(self.plus_button)
         increment_layout.addWidget(self.incrm_input)
         increment_layout.addWidget(self.minus_button)
@@ -322,7 +322,7 @@ class NumberWidget(QWidget):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    window = NumberWidget(positionqty=DummyAxis(0))
+    window = ClosedLoopWidget(positionqty=DummyAxis(0))
     window.activate()
     window.show()
     sys.exit(app.exec())

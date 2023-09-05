@@ -9,7 +9,7 @@ from PyQt6.QtWidgets import QApplication, QMainWindow, QPushButton, QVBoxLayout,
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 
-from src.view import NumberWidget
+from src.view import ClosedLoopWidget
 
 
 class GUI(QMainWindow):
@@ -43,13 +43,13 @@ class GUI(QMainWindow):
         self.text_fields_layout = QVBoxLayout()
 
         # Create text fields
-        self.pressure_field = NumberWidget(title="Pressure", unit=" kPa", symbols=7)
+        self.pressure_field = ClosedLoopWidget(title="Pressure", unit=" kPa", symbols=7)
         self.text_fields_layout.addWidget(self.pressure_field)
 
-        self.temperature_field = NumberWidget(title="Temperature", unit=" K", symbols=9)
+        self.temperature_field = ClosedLoopWidget(title="Temperature", unit=" K", symbols=9)
         self.text_fields_layout.addWidget(self.temperature_field)
 
-        self.voltage1_field = NumberWidget(title="Voltage 1", unit=" V", symbols=9)
+        self.voltage1_field = ClosedLoopWidget(title="Voltage 1", unit=" V", symbols=9)
         self.text_fields_layout.addWidget(self.voltage1_field)
 
         self.voltage2_field = QLineEdit(self)

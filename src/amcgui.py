@@ -11,7 +11,7 @@ from PyQt6.QtWidgets import (
     QWidget,
     QInputDialog,
 )
-from src.view import NumberWidget
+from src.view import ClosedLoopWidget
 
 from controller import AMC300Controller
 
@@ -34,11 +34,11 @@ class GUI(QMainWindow):
         mainlayout = QVBoxLayout(self.central_widget)
         self.statusBar().showMessage("Disconnected")
 
-        self.axis_widgets: List[NumberWidget] = []
+        self.axis_widgets: List[ClosedLoopWidget] = []
 
         for i in range(3):
             self.axis_widgets.append(
-                NumberWidget(title=f"Axis {i}", unit=r" um", symbols=7)
+                ClosedLoopWidget(title=f"Axis {i}", unit=r" um", symbols=7)
             )
 
         for ax in self.axis_widgets:

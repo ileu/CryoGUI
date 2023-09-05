@@ -1,1 +1,1 @@
-from src.view.numberwidget import NumberWidget
+from src.view.closedloopwidget import ClosedLoopWidget
