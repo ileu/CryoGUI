@@ -8,31 +8,31 @@ class DummyAMC300Controller:
     def __init__(self, ip):
         self.ip = ip
 
-        self.axes: List[DummyPosQty] = []
+        self.axes: List[DummyAxis] = []
 
         self._position = 0
 
     def connect(self):
         for i in range(3):
-            self.axes.append(DummyPosQty(i))
+            self.axes.append(DummyAxis(i))
         return True
 
     def disconnect(self):
         return True
 
 
-class DummyPosQty(PositionQty):
+class DummyAxis(PositionQty):
     def __init__(self, index):
         self._position = 0
         self._target_position = 0
         self.start_time = datetime.now()
         self.index = index
-        self.active = False
-        self.moving = False
+        self.grounded = True
+        self.movable = False
 
     @property
     def position_m(self):
-        if self.active:
+        if self.grounded:
             self._move()
         return self._position
 
@@ -57,22 +57,26 @@ class DummyPosQty(PositionQty):
             self.set_status_axis(False)
 
     def set_axis_control_move(self, b):
+        print("set axis control move", b)
         start_time = datetime.now()
         if b and start_time > self.start_time:
             self.start_time = datetime.now()
-        self.moving = b
+        self.movable = b
 
     def get_axis_movement(self) -> bool:
-        return self.moving
+        return self.movable
 
     def activate_axis(self):
-        self.active = True
+        print("activate axis")
+        self.grounded = True
 
     def deactivate_axis(self):
-        self.active = False
+        print("deactivate axis")
+        self.grounded = False
 
     def set_status_axis(self, status):
-        self.active = status
+        print("set status axis", status)
+        self.grounded = status
 
     def get_status_axis(self):
-        return self.active
+        return self.grounded

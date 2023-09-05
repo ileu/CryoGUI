@@ -8,11 +8,12 @@ from PyQt6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QLineEdit,
-    QPushButton,
+    QPushButton, QStyle,
 )
 from PyQt6.QtCore import Qt
 
-from src.controller._quantities import PositionQty
+from src.controller.axis import Axis
+from src.controller.dummies import DummyAxis
 
 
 class NumberWidget(QWidget):
@@ -22,7 +23,7 @@ class NumberWidget(QWidget):
         title: str = "Quantity",
         symbols: int = 7,
         unit: str = "",
-        positionqty: PositionQty = None,
+        positionqty: Axis | DummyAxis = None,
         **kwargs
     ):
         super().__init__(parent, **kwargs)
@@ -38,13 +39,16 @@ class NumberWidget(QWidget):
         self.minus_button = QPushButton("-")
         self.set_button = QPushButton("Set")
 
-        self.gnd_button = QPushButton("GND")
+        self.gnd_button = QPushButton("OFF")
+
+        self.move_button = QPushButton()
 
         self.positionqty = positionqty
 
         self.symbols = symbols
         self.unit = unit
         self.grounded = False
+        self.movable = False
 
         self.initUI()
 
@@ -110,6 +114,20 @@ class NumberWidget(QWidget):
         self.set_button.setFixedSize(60, 24)
         self.set_button.clicked.connect(self.setValue)
 
+        self.move_button.setCheckable(True)
+        self.move_button.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_MediaPlay))
+        self.move_button.setFixedSize(30, 20)
+        self.move_button.setStyleSheet(
+            "QPushButton {border: 2px solid black; padding-bottom: 0px; "
+            "border-radius: 5px; font-size: 16px;"
+            "background-color: rgb(255,75,50);}"
+            "QPushButton:hover {background-color: rgb(228,241,251); }"
+            "QPushButton:pressed {background-color: rgb(204,228,247); }"
+            "QPushButton:checked {background-color: rgb(0,255,0); }"
+            "QPushButton:disabled {background-color: rgb(200,200,200); }"
+        )
+        self.move_button.clicked.connect(self.toggle_moveable)
+
         self.gnd_button.setCheckable(True)
         self.gnd_button.setStyleSheet(
             "QPushButton {border: 2px solid black; padding-bottom: 2px; "
@@ -121,12 +139,14 @@ class NumberWidget(QWidget):
             "QPushButton:disabled {background-color: rgb(200,200,200); }"
         )
         self.gnd_button.setFixedSize(40, 20)
+        self.gnd_button.clicked.connect(self.toggle_gnd)
 
         main_layout = QVBoxLayout()
         text_layout = QHBoxLayout()
         text_layout.addWidget(self.title_label)
         text_layout.addStretch()
         text_layout.addWidget(self.status_label)
+        text_layout.addWidget(self.move_button)
         text_layout.addWidget(self.gnd_button)
 
         main_layout.addLayout(text_layout)
@@ -201,17 +221,71 @@ class NumberWidget(QWidget):
         self.number_input.setText(str(inp_number - incr_number))
         self.positionqty.position_um = inp_number - incr_number
 
+    def toggle_gnd(self):
+        self.gnd_button.setChecked(not self.grounded)
+        self.positionqty.set_status_axis(not self.grounded)
+        self.updateGrounded()
+        self.updateGroundedButton()
+
+    def toggle_moveable(self):
+        self.move_button.setChecked(not self.movable)
+        self.positionqty.set_axis_control_move(not self.movable)
+        self.updateMovable()
+        self.updateMovableButton()
+
     def updateNumberDisplay(self):
         try:
             self.value = self.positionqty.position_um
             self.number_display.setText("{:.7}".format(self.value) + self.unit)
         except AttributeError:
             self.status_label.setText("Error: Axis is not a position quantity")
-            return
         except Exception as e:
             print(e)
             self.status_label.setText("Error")
-            return
+
+    def updateGrounded(self):
+        try:
+            self.grounded = self.positionqty.get_status_axis()
+        except AttributeError:
+            self.status_label.setText("Error: Axis is not a position quantity")
+        except Exception as e:
+            print(e)
+            self.status_label.setText("Error")
+
+    def updateGroundedButton(self):
+        self.gnd_button.setChecked(self.grounded)
+        if self.grounded:
+            self.gnd_button.setText("ON")
+        else:
+            self.gnd_button.setText("OFF")
+
+    def updateMovable(self):
+        try:
+            self.movable = self.positionqty.get_axis_movement()
+            print(self.movable)
+        except AttributeError:
+            self.status_label.setText("Error: Axis is not a position quantity")
+        except Exception as e:
+            print(e)
+            self.status_label.setText("Error")
+
+    def updateMovableButton(self):
+        self.move_button.setChecked(self.movable)
+        if self.movable:
+            self.move_button.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_MediaStop))
+        else:
+            self.move_button.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_MediaPlay))
+
+    def update(self):
+        self.updateNumberDisplay()
+        self.updateGrounded()
+        self.updateGroundedButton()
+        if self.grounded:
+            self.move_button.setEnabled(False)
+        else:
+            self.move_button.setEnabled(True)
+            self.updateMovable()
+            self.updateMovableButton()
 
     def setValue(self):
         if self._check_grounded():
@@ -239,8 +313,7 @@ class NumberWidget(QWidget):
         for widget in self.findChildren(QWidget):
             widget.setEnabled(True)
 
-        self.value = self.positionqty.position_um
-        self.number_input.setText(str(self.value))
+        self.update()
 
     def deactivate(self):
         for widget in self.findChildren(QWidget):
@@ -249,6 +322,7 @@ class NumberWidget(QWidget):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    window = NumberWidget()
+    window = NumberWidget(positionqty=DummyAxis(0))
+    window.activate()
     window.show()
     sys.exit(app.exec())

@@ -109,8 +109,7 @@ class GUI(QMainWindow):
     def update_positions(self):
         while self.update_thread_running:
             for ax_wid in self.axis_widgets:
-                ax_wid.updateNumberDisplay()
-                ax_wid.positionqty.set_status_axis(ax_wid.gnd_button.isChecked())
+                ax_wid.update()
 
             time.sleep(0.1)
 
