@@ -1,4 +1,5 @@
 import sys
+from typing import Callable
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QDoubleValidator
@@ -14,6 +15,8 @@ class IncrementWidget(QWidget):
         self.input = QLineEdit()
         self.plus_button = QPushButton("+")
         self.minus_button = QPushButton("-")
+
+        self._callOnValueChanged = None
 
         self.initUI()
 
@@ -72,17 +75,24 @@ class IncrementWidget(QWidget):
         try:
             incr_number = float(self.input.text())
         except ValueError:
-            incr_number = 0.0
+            return
 
         self.value += incr_number
+        if self._callOnValueChanged is not None:
+            self._callOnValueChanged(value=self.value)
 
     def decrementValue(self):
         try:
             incr_number = float(self.input.text())
         except ValueError:
-            incr_number = 0.0
+            return
 
         self.value -= incr_number
+        if self._callOnValueChanged is not None:
+            self._callOnValueChanged(value=self.value)
+
+    def onValueChanged(self, callback: Callable[[float], None]) -> None:
+        self._callOnValueChanged = callback
 
 
 class SetWidget(QWidget):
@@ -96,6 +106,8 @@ class SetWidget(QWidget):
         self.title = QLabel(title + unit)
         self.input = QLineEdit()
         self.set_button = QPushButton("Set")
+
+        self._callOnValueChanged = None
 
         self.initUI()
 
@@ -135,6 +147,12 @@ class SetWidget(QWidget):
             self.value = float(self.input.text())
         except ValueError:
             self.value = 0.0
+
+        if self._callOnValueChanged is not None:
+            self._callOnValueChanged(value=self.value)
+
+    def onValueChanged(self, callback: Callable[[float], None]) -> None:
+        self._callOnValueChanged = callback
 
 
 if __name__ == "__main__":
