@@ -86,7 +86,7 @@ class GUI(QMainWindow):
 
         for i, ax_wid in enumerate(self.axis_widgets):
             axis = self.amcController.axes[i]
-            ax_wid.positionqty = axis
+            ax_wid.bound_value = axis
             ax_wid.gnd_button.setChecked(axis.get_status_axis())
             ax_wid.setStatus("Connected")
             ax_wid.activate()
@@ -102,7 +102,7 @@ class GUI(QMainWindow):
         self.is_connected = False
 
         for i, ax_wid in enumerate(self.axis_widgets):
-            ax_wid.positionqty = None
+            ax_wid.bound_value = None
             ax_wid.setStatus("Disconnected")
             ax_wid.deactivate()
 
@@ -110,7 +110,7 @@ class GUI(QMainWindow):
         while self.update_thread_running:
             for ax_wid in self.axis_widgets:
                 ax_wid.updateNumberDisplay()
-                ax_wid.positionqty.set_status_axis(ax_wid.gnd_button.isChecked())
+                ax_wid.bound_value.set_status_axis(ax_wid.gnd_button.isChecked())
 
             time.sleep(0.1)
 

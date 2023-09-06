@@ -40,7 +40,7 @@ class NumberWidget(QWidget):
 
         self.gnd_button = QPushButton("GND")
 
-        self.positionqty = positionqty
+        self.bound_value = positionqty
 
         self.symbols = symbols
         self.unit = unit
@@ -182,7 +182,7 @@ class NumberWidget(QWidget):
             inp_number = 0.0
 
         self.number_input.setText(str(inp_number + incr_number))
-        self.positionqty.position_um = inp_number + incr_number
+        self.bound_value.position_um = inp_number + incr_number
 
     def decrementValue(self):
         if self._check_grounded():
@@ -199,11 +199,11 @@ class NumberWidget(QWidget):
             inp_number = 0.0
 
         self.number_input.setText(str(inp_number - incr_number))
-        self.positionqty.position_um = inp_number - incr_number
+        self.bound_value.position_um = inp_number - incr_number
 
     def updateNumberDisplay(self):
         try:
-            self.value = self.positionqty.position_um
+            self.value = self.bound_value.position_um
             self.number_display.setText("{:.7}".format(self.value) + self.unit)
         except AttributeError:
             self.status_label.setText("Error: Axis is not a position quantity")
@@ -223,7 +223,7 @@ class NumberWidget(QWidget):
             self.status_label.setText("Status: Invalid value")
             return
         try:
-            self.positionqty.position_um = new_number
+            self.bound_value.position_um = new_number
         except AttributeError:
             self.status_label.setText("Error: Axis is not a position quantity")
             return
@@ -239,7 +239,7 @@ class NumberWidget(QWidget):
         for widget in self.findChildren(QWidget):
             widget.setEnabled(True)
 
-        self.value = self.positionqty.position_um
+        self.value = self.bound_value.position_um
         self.number_input.setText(str(self.value))
 
     def deactivate(self):
