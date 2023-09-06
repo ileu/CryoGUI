@@ -3,7 +3,7 @@ from typing import Callable
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QDoubleValidator
-from PyQt6.QtWidgets import QWidget, QLineEdit, QPushButton, QApplication, QVBoxLayout, QHBoxLayout, QLabel
+from PyQt6.QtWidgets import QWidget, QLineEdit, QPushButton, QApplication, QVBoxLayout, QHBoxLayout, QLabel, QStyle
 
 
 class IncrementWidget(QWidget):
@@ -155,8 +155,78 @@ class SetWidget(QWidget):
         self._callOnValueChanged = callback
 
 
+class ControlBar(QWidget):
+    def __init__(self, title="Title"):
+        super().__init__()
+
+        self.title_label = QLabel(title)
+        self.status_label = QLabel("Status: Disconnected")
+
+        self.power_button = QPushButton("OFF")
+
+        self.move_button = QPushButton()
+
+        self.powered = False
+        self.movable = False
+
+        self.initUI()
+
+    def initUI(self):
+        self.move_button.setCheckable(True)
+        self.move_button.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_MediaPlay))
+        self.move_button.setFixedSize(30, 20)
+        self.move_button.setStyleSheet(
+            "QPushButton {border: 2px solid black; padding-bottom: 0px; "
+            "border-radius: 5px; font-size: 16px;"
+            "background-color: rgb(255,75,50);}"
+            "QPushButton:hover {background-color: rgb(228,241,251); }"
+            "QPushButton:pressed {background-color: rgb(204,228,247); }"
+            "QPushButton:checked {background-color: rgb(0,255,0); }"
+            "QPushButton:disabled {background-color: rgb(200,200,200); }"
+        )
+        self.move_button.clicked.connect(self.toggle_moveable)
+
+        self.power_button.setCheckable(True)
+        self.power_button.setStyleSheet(
+            "QPushButton {border: 2px solid black; padding-bottom: 2px; "
+            "border-radius: 5px; font-size: 16px; font-weight: bold;"
+            "background-color: rgb(180,180,255);}"
+            "QPushButton:hover {background-color: rgb(228,241,251); }"
+            "QPushButton:pressed {background-color: rgb(204,228,247); }"
+            "QPushButton:checked {background-color: rgb(0,255,0); }"
+            "QPushButton:disabled {background-color: rgb(200,200,200); }"
+        )
+        self.power_button.setFixedSize(40, 20)
+        self.power_button.clicked.connect(self.toggle_power)
+
+        main_layout = QVBoxLayout()
+        text_layout = QHBoxLayout()
+        text_layout.addWidget(self.title_label)
+        text_layout.addStretch()
+        text_layout.addWidget(self.status_label)
+        text_layout.addWidget(self.move_button)
+        text_layout.addWidget(self.power_button)
+        main_layout.addLayout(text_layout)
+
+        self.setLayout(main_layout)
+
+    def toggle_moveable(self):
+        self.movable = not self.movable
+        if self.movable:
+            self.move_button.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_MediaPause))
+        else:
+            self.move_button.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_MediaPlay))
+
+    def toggle_power(self):
+        self.powered = not self.powered
+        if self.powered:
+            self.power_button.setText("ON")
+        else:
+            self.power_button.setText("OFF")
+
+
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    window = IncrementWidget()
+    window = ControlBar()
     window.show()
     sys.exit(app.exec())

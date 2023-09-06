@@ -43,6 +43,17 @@ class DummyAxis(PositionQty):
             self.start_time = start_time
         self._target_position = pos_m
 
+    @property
+    def target_position(self):
+        return self._target_position
+
+    @target_position.setter
+    def target_position(self, pos):
+        self._target_position = pos
+
+    def get_target_position(self):
+        return self._target_position
+
     def _move(self):
         elapsed_time = (datetime.now() - self.start_time).total_seconds()
         if elapsed_time > 3:

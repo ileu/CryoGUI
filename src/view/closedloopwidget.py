@@ -276,6 +276,8 @@ class ClosedLoopWidget(QWidget):
             self.move_button.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_MediaPlay))
 
     def update(self):
+        super().update()
+
         self.updateNumberDisplay()
         self.updateGrounded()
         self.updateGroundedButton()
@@ -311,7 +313,7 @@ class ClosedLoopWidget(QWidget):
     def activate(self):
         for widget in self.findChildren(QWidget):
             widget.setEnabled(True)
-        number_input_value = self.positionqty.get_target_postion()
+        number_input_value = self.positionqty.get_target_position()
         self.number_input.setText(("{:.7}".format(number_input_value * 1e-3)))
         self.update()
 

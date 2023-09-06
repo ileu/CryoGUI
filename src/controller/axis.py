@@ -64,5 +64,5 @@ class Axis(PositionQty):
     def get_status_axis(self) -> bool:
         return self.device.control.getControlOutput(self.index)
 
-    def get_target_postion(self):
+    def get_target_position(self):
         return self.device.move.getControlTargetPosition(self.index)
