@@ -80,3 +80,6 @@ class DummyAxis(PositionQty):
 
     def get_status_axis(self):
         return self.grounded
+
+    def get_target_postion(self):
+        return self._target_position

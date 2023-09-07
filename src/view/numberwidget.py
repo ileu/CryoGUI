@@ -62,7 +62,7 @@ class NumberWidget(QWidget):
         )
         self.number_input.setFixedSize((self.symbols + len(self.unit)) * 20, 24)
         self.number_input.setValidator(QDoubleValidator())
-        self.number_input.returnPressed.connect(self.setValue)
+        self.number_input.returnPressed.connect(self.set_value)
         self.number_input.setPlaceholderText(self.unit)
 
         self.incrm_input.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -112,7 +112,7 @@ class NumberWidget(QWidget):
             "QPushButton:disabled {background-color: rgb(200,200,200); }"
         )
         self.set_button.setFixedSize(60, 24)
-        self.set_button.clicked.connect(self.setValue)
+        self.set_button.clicked.connect(self.set_value)
 
         self.move_button.setCheckable(True)
         self.move_button.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_MediaPlay))
@@ -177,7 +177,10 @@ class NumberWidget(QWidget):
 
         control_layout.addLayout(increment_layout)
 
+        control_layout.addStretch()
+
         main_layout.addLayout(control_layout)
+        main_layout.addStretch()
 
         self.setLayout(main_layout)
 
@@ -286,7 +289,7 @@ class NumberWidget(QWidget):
             self.updateMovable()
             self.updateMovableButton()
 
-    def setValue(self):
+    def set_value(self):
         if self._check_grounded():
             return
 
