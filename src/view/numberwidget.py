@@ -314,7 +314,7 @@ class NumberWidget(QWidget):
     def activate(self):
         for widget in self.findChildren(QWidget):
             widget.setEnabled(True)
-        number_input_value = self.positionqty.get_target_postion()
+        number_input_value = self.positionqty.get_target_position()
         self.number_input.setText(("{:.7}".format(number_input_value * 1e-3)))
         self.update()
 
