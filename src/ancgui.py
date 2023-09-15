@@ -74,7 +74,7 @@ class GUI(QMainWindow):
 
     def connect(self, ip_address):
         self.ip_address = ip_address
-        self.amcController = AMC300Controller(ip_address)
+        self.amcController = ANC300Controller(ip_address)
         connected = self.amcController.connect()
 
         if not connected:

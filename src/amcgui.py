@@ -16,9 +16,6 @@ from src.view import ClosedLoopWidget
 from controller import AMC300Controller
 
 
-# from controller.dummies import DummyAMC300Controller as AMC300Controller
-
-
 class GUI(QMainWindow):
     def __init__(self):
         super().__init__()
