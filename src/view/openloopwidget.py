@@ -1,17 +1,25 @@
 from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import QWidget, QLabel, QPushButton, QApplication, QVBoxLayout, QHBoxLayout, QStyle
+from PyQt6.QtWidgets import (
+    QWidget,
+    QLabel,
+    QPushButton,
+    QApplication,
+    QVBoxLayout,
+    QHBoxLayout,
+    QStyle,
+)
 
 from src.view.utilitywidgets import SetWidget, IncrementWidget
 
 
 class OpenLoopWidget(QWidget):
     def __init__(
-            self,
-            parent: QWidget = None,
-            title: str = "Quantity",
-            symbols: int = 7,
-            unit: str = "",
-            **kwargs
+        self,
+        parent: QWidget = None,
+        title: str = "Quantity",
+        symbols: int = 7,
+        unit: str = "",
+        **kwargs
     ):
         super().__init__(parent, **kwargs)
         self.value = 0.0
@@ -37,7 +45,9 @@ class OpenLoopWidget(QWidget):
 
     def initUI(self):
         self.move_button.setCheckable(True)
-        self.move_button.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_MediaPlay))
+        self.move_button.setIcon(
+            self.style().standardIcon(QStyle.StandardPixmap.SP_MediaPlay)
+        )
         self.move_button.setFixedSize(30, 20)
         self.move_button.setStyleSheet(
             "QPushButton {border: 2px solid black; padding-bottom: 0px; "
@@ -74,21 +84,36 @@ class OpenLoopWidget(QWidget):
         text_layout.addStretch()
         text_layout.addWidget(self.status_label, alignment=Qt.AlignmentFlag.AlignRight)
         text_layout.addWidget(self.move_button, alignment=Qt.AlignmentFlag.AlignRight)
-        text_layout.addWidget(self.gnd_button,  alignment=Qt.AlignmentFlag.AlignRight)
+        text_layout.addWidget(self.gnd_button, alignment=Qt.AlignmentFlag.AlignRight)
 
         main_layout.addLayout(text_layout)
 
         control_layout = QHBoxLayout()
         control_layout.setSpacing(0)
-        control_layout.addWidget(self.voltage_widget, alignment=Qt.AlignmentFlag.AlignLeft)
-        control_layout.addWidget(self.frequency_widget, alignment=Qt.AlignmentFlag.AlignCenter)
-        control_layout.addWidget(self.step_widget, alignment=Qt.AlignmentFlag.AlignRight)
+        control_layout.addWidget(
+            self.voltage_widget, alignment=Qt.AlignmentFlag.AlignLeft
+        )
+        control_layout.addWidget(
+            self.frequency_widget, alignment=Qt.AlignmentFlag.AlignCenter
+        )
+        control_layout.addWidget(
+            self.step_widget, alignment=Qt.AlignmentFlag.AlignRight
+        )
 
         main_layout.addLayout(control_layout)
 
         main_layout.addStretch()
 
         self.setLayout(main_layout)
+
+    def update(self):
+        raise NotImplementedError
+
+    def activate(self):
+        raise NotImplementedError
+
+    def deactivate(self):
+        raise NotImplementedError
 
 
 if __name__ == "__main__":
