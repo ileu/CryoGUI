@@ -14,6 +14,8 @@ from PyQt6.QtWidgets import (
 from src.view import NumberWidget
 
 # from controller import AMC300Controller
+
+
 from controller.dummies import DummyAMC300Controller as AMC300Controller
 
 
@@ -43,6 +45,9 @@ class GUI(QMainWindow):
             ax.deactivate()
             mainlayout.addWidget(ax)
 
+        self.connect_action = QAction("Connect", self)
+        self.disconnect_action = QAction("Disconnect", self)
+
         self.init_menu()
 
         self.update_thread = None
@@ -52,13 +57,12 @@ class GUI(QMainWindow):
     def init_menu(self):
         menubar = self.menuBar()
 
-        connect_action = QAction("Connect", self)
-        connect_action.triggered.connect(self.show_connect_dialog)
-        menubar.addAction(connect_action)
+        self.connect_action.triggered.connect(self.show_connect_dialog)
+        menubar.addAction(self.connect_action)
 
-        disconnect_action = QAction("Disconnect", self)
-        disconnect_action.triggered.connect(self.disconnect)
-        menubar.addAction(disconnect_action)
+        self.disconnect_action.triggered.connect(self.disconnect)
+        self.disconnect_action.setEnabled(False)
+        menubar.addAction(self.disconnect_action)
 
     def show_connect_dialog(self):
         ipaddress, ok = QInputDialog.getText(
@@ -83,10 +87,12 @@ class GUI(QMainWindow):
 
         self.statusBar().showMessage("Connected to " + ip_address)
         self.is_connected = True
+        self.connect_action.setEnabled(False)
+        self.disconnect_action.setEnabled(True)
 
         for i, ax_wid in enumerate(self.axis_widgets):
             axis = self.amcController.axes[i]
-            ax_wid.bound_value = axis
+            ax_wid.positionqty = axis
             ax_wid.gnd_button.setChecked(axis.get_status_axis())
             ax_wid.setStatus("Connected")
             ax_wid.activate()
@@ -101,16 +107,18 @@ class GUI(QMainWindow):
         self.statusBar().showMessage("Disconnected")
         self.is_connected = False
 
+        self.disconnect_action.setEnabled(False)
+        self.connect_action.setEnabled(True)
+
         for i, ax_wid in enumerate(self.axis_widgets):
-            ax_wid.bound_value = None
+            ax_wid.positionqty = None
             ax_wid.setStatus("Disconnected")
             ax_wid.deactivate()
 
     def update_positions(self):
         while self.update_thread_running:
             for ax_wid in self.axis_widgets:
-                ax_wid.updateNumberDisplay()
-                ax_wid.bound_value.set_status_axis(ax_wid.gnd_button.isChecked())
+                ax_wid.update()
 
             time.sleep(0.1)
 

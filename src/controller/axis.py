@@ -20,7 +20,6 @@ class Axis(PositionQty):
         :return:
         """
         self.update_position()
-        self.check_moving_axis()
         return self._position
 
     @position_m.setter
@@ -45,10 +44,6 @@ class Axis(PositionQty):
         """
         self._position = self.device.move.getPosition(self.index) * 1e-9
 
-    def check_moving_axis(self):
-        if self.device.status.getStatusTargetRange(self.index):
-            self.set_axis_control_move(False)
-
     def set_axis_control_move(self, b: bool):
         self.device.control.setControlMove(self.index, b)
 
@@ -68,3 +63,6 @@ class Axis(PositionQty):
 
     def get_status_axis(self) -> bool:
         return self.device.control.getControlOutput(self.index)
+
+    def get_target_position(self):
+        return self.device.move.getControlTargetPosition(self.index)
