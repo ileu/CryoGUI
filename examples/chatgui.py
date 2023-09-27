@@ -16,7 +16,7 @@ class GUI(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        self.setWindowTitle("GUI with Plots and Text Fields")
+        self.setWindowTitle("ANCGUI with Plots and Text Fields")
         self.setGeometry(100, 100, 1000, 600)
 
         self.central_widget = QWidget(self)

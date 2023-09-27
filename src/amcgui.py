@@ -22,7 +22,7 @@ class GUI(QMainWindow):
         self.ip_address = None
         self.amcController = None
 
-        self.setWindowTitle("AMC300 Controller GUI")
+        self.setWindowTitle("AMC300 Controller ANCGUI")
 
         self.central_widget = QWidget(self)
         self.setCentralWidget(self.central_widget)

@@ -5,6 +5,23 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QDoubleValidator
 from PyQt6.QtWidgets import QWidget, QLineEdit, QPushButton, QApplication, QVBoxLayout, QHBoxLayout, QLabel, QStyle
 
+push_button_style = (
+    "QPushButton {border: 2px solid black; padding-bottom: 2px; "
+    "border-radius: 5px; font-size: 20px;}"
+    "QPushButton:hover {background-color: rgb(228,241,251); }"
+    "QPushButton:pressed {background-color: rgb(204,228,247); }"
+    "QPushButton:disabled {background-color: rgb(200,200,200); }"
+)
+line_edit_stale_small = (
+    "QLineEdit { background-color: white; border: 2px solid black; border-radius: 5px; font-size: 16px;}"
+    "QLineEdit:disabled { background-color: rgb(200,200,200); }"
+)
+
+line_edit_style_large = (
+    "QLineEdit { background-color: white; border: 2px solid black; font-size: 25px;}"
+    "QLineEdit:disabled { background-color: rgb(200,200,200); }"
+)
+
 
 class IncrementWidget(QWidget):
     def __init__(self, parent: QWidget = None, title: str = "TEST", unit: str = "", **kwargs):
@@ -23,11 +40,8 @@ class IncrementWidget(QWidget):
     def initUI(self):
 
         self.input.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.input.setStyleSheet(
-            "QLineEdit { background-color: white; border: 2px solid black; font-size: 32px;}"
-            "QLineEdit:disabled { background-color: rgb(200,200,200); }"
-        )
-        self.input.setFixedSize(65, 50)
+        self.input.setStyleSheet(line_edit_style_large)
+        self.input.setFixedSize(65, 40)
         self.input.setValidator(QDoubleValidator())
         self.input.setPlaceholderText("0")
 
@@ -39,7 +53,7 @@ class IncrementWidget(QWidget):
             "QPushButton:pressed {background-color: rgb(204,228,247); }"
             "QPushButton:disabled {background-color: rgb(200,200,200); }"
         )
-        self.plus_button.setFixedSize(24, 50)
+        self.plus_button.setFixedSize(24, 40)
         self.plus_button.clicked.connect(self.incrementValue)
 
         self.minus_button.setStyleSheet(
@@ -50,10 +64,11 @@ class IncrementWidget(QWidget):
             "QPushButton:pressed {background-color: rgb(204,228,247); }"
             "QPushButton:disabled {background-color: rgb(200,200,200); }"
         )
-        self.minus_button.setFixedSize(24, 50)
+        self.minus_button.setFixedSize(24, 40)
         self.minus_button.clicked.connect(self.decrementValue)
 
         main_layout = QVBoxLayout()
+        main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         main_layout.setSpacing(2)
 
@@ -99,11 +114,11 @@ class SetWidget(QWidget):
 
     def __init__(self, title="", symbols: int = 7, unit: str = "", **kwargs):
         super().__init__()
-        self.value = 0.0
+        self.value = 0.01235578995675
         self.symbols = symbols
         self.unit = unit
 
-        self.title = QLabel(title + unit)
+        self.title = QLabel(f"{title} [{unit}]")
         self.input = QLineEdit()
         self.set_button = QPushButton("Set")
 
@@ -113,31 +128,29 @@ class SetWidget(QWidget):
 
     def initUI(self):
         self.input.setAlignment(Qt.AlignmentFlag.AlignRight)
-        self.input.setStyleSheet(
-            "QLineEdit { background-color: white; border: 2px solid black; border-radius: 5px; font-size: 16px;}"
-            "QLineEdit:disabled { background-color: rgb(200,200,200); }"
-        )
-        self.input.setFixedSize((self.symbols + len(self.unit)) * 20, 24)
+        self.input.setStyleSheet(line_edit_stale_small)
+        self.input.setFixedSize((self.symbols + 1) * 10, 24)  # +1 because decimal point
         self.input.setValidator(QDoubleValidator())
         self.input.returnPressed.connect(self.setValue)
-        self.input.setPlaceholderText(self.unit)
+        self.input.setPlaceholderText(f"{self.value}"[:self.symbols - 1])
+        self.input.setMaxLength(int(self.symbols))
 
         self.set_button.setStyleSheet(
-            "QPushButton {border: 2px solid black; padding-bottom: 2px; "
-            "border-radius: 5px; font-size: 20px;}"
-            "QPushButton:hover {background-color: rgb(228,241,251); }"
-            "QPushButton:pressed {background-color: rgb(204,228,247); }"
-            "QPushButton:disabled {background-color: rgb(200,200,200); }"
+            push_button_style
         )
-        self.set_button.setFixedSize(60, 24)
+        self.set_button.setFixedSize(50, 24)
         self.set_button.clicked.connect(self.setValue)
 
         main_layout = QVBoxLayout()
-        main_layout.setSpacing(2)
+        control_layout = QHBoxLayout()
+        main_layout.setSpacing(0)
+        main_layout.setContentsMargins(0, 0, 0, 0)
 
-        main_layout.addWidget(self.title, alignment=Qt.AlignmentFlag.AlignCenter)
-        main_layout.addWidget(self.input, alignment=Qt.AlignmentFlag.AlignCenter)
-        main_layout.addWidget(self.set_button, alignment=Qt.AlignmentFlag.AlignCenter)
+        main_layout.addWidget(self.title, alignment=Qt.AlignmentFlag.AlignLeft)
+        control_layout.addWidget(self.input, alignment=Qt.AlignmentFlag.AlignLeft)
+        control_layout.addWidget(self.set_button, alignment=Qt.AlignmentFlag.AlignLeft)
+        control_layout.addStretch()
+        main_layout.addLayout(control_layout)
 
         main_layout.setAlignment(Qt.AlignmentFlag.AlignVCenter)
         self.setLayout(main_layout)
@@ -200,6 +213,7 @@ class ControlBar(QWidget):
         self.power_button.clicked.connect(self.toggle_power)
 
         main_layout = QVBoxLayout()
+        main_layout.setContentsMargins(0, 0, 0, 0)
         text_layout = QHBoxLayout()
         text_layout.addWidget(self.title_label)
         text_layout.addStretch()
@@ -227,6 +241,6 @@ class ControlBar(QWidget):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    window = ControlBar()
+    window = SetWidget(title="HALLO", unit="m", symbols=7)
     window.show()
     sys.exit(app.exec())
