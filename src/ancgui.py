@@ -30,17 +30,15 @@ class ANCGUI(InstrumentWidget):
         self.status_label = QLabel("Disconnected")
 
         self.axis = ["LX", "LY", "LZ", "RX", "RY", "RZ"]
-        self.axis_widgets = []
+        self.axis_widgets = {}
 
         lineFrame = QFrame()
-        lineFrame.setFixedSize(100,2)
+        lineFrame.setFixedSize(100, 2)
         lineFrame.setStyleSheet("QFrame {border: 2px solid black; border-radius: 20px; }")
 
         for axi in self.axis:
             ax_widget = OpenLoopWidget(title=axi)
-            self.axis_widgets.append(
-                ax_widget
-            )
+            self.axis_widgets[axi] = ax_widget
             ax_widget.deactivate()
             mainLayout.addWidget(ax_widget)
             mainLayout.addWidget(lineFrame)
@@ -50,7 +48,7 @@ class ANCGUI(InstrumentWidget):
 
     def refresh(self):
         while self.is_refresh_thread_running:
-            for ax_wid in self.axis_widgets:
+            for ax_wid in self.axis_widgets.values():
                 ax_wid.update()
 
             time.sleep(0.1)
@@ -64,7 +62,7 @@ class ANCGUI(InstrumentWidget):
 
         try:
             pass
-            ancController: ANC300Controller = None #ANC300Controller(adapter=address, axisnames=axis, passwd=passwd)
+            ancController: ANC300Controller = None  # ANC300Controller(adapter=address, axisnames=axis, passwd=passwd)
         except:
             self.status = "Connection failed"
             return False

@@ -9,19 +9,30 @@ from PyQt6.QtWidgets import (
     QStyle,
     QGridLayout, QFrame
 )
+from pymeasure.instruments.attocube.anc300 import Axis
 
 from src.view.utilitywidgets import SetWidget, IncrementWidget, push_button_style, ControlBar
+
+
+class DummyAxis:
+    def __getattr__(self, item):
+        print(f"get {item}")
+        return super().__getattribute__(item)
+
+    def __setattr__(self, key, value):
+        print(f"set {key}: {value}")
+        super().__setattr__(key, value)
 
 
 class OpenLoopWidget(QFrame):
     def __init__(
             self,
             parent: QWidget = None,
+            axis: Axis | DummyAxis = None,
             title: str = "Quantity",
             **kwargs
     ):
         super().__init__(parent, **kwargs)
-        self.value = 0.0
         self.control_bar = ControlBar()
 
         self.control_bar.title_label.setText(title)
@@ -41,6 +52,12 @@ class OpenLoopWidget(QFrame):
         self.movable = False
 
         self.initUI()
+
+        if axis is None:
+            self.axis: Axis = None
+            self.deactivate()
+        else:
+            self.axis = axis
 
     def initUI(self):
         self.setContentsMargins(0, 0, 0, 0)
@@ -92,12 +109,57 @@ class OpenLoopWidget(QFrame):
 
         self.setLayout(main_layout)
 
-    def update(self):
-        raise NotImplementedError
+    def refresh_values(self):
+        pass
+
+    def setVoltage(self):
+        try:
+            self.voltage_widget.value = float(self.voltage_widget.input.text())
+        except ValueError:
+            self.voltage_widget.value = 0
+        self.axis.voltage = self.voltage_widget.value
+
+    def setFrequency(self):
+        try:
+            self.frequency_widget.value = float(self.frequency_widget.input.text())
+        except ValueError:
+            self.frequency_widget.value = 100
+        self.axis.frequency = self.frequency_widget.value
+
+    def setOffsetVoltage(self):
+        try:
+            self.offset_widget.value = float(self.offset_widget.input.text())
+        except ValueError:
+            self.offset_widget.value = 0
+        self.axis.offset_voltage = self.offset_widget.value
+
+    def stepp(self):
+        try:
+            self.step_widget.value = float(self.step_widget.input.text())
+        except ValueError:
+            self.step_widget.value = 0
+        self.axis.step = self.step_widget.value
+
+    def connect_to_axis(self, widget, property):
+        def connection():
+            try:
+                widget.value = float(widget.input.text())
+            except ValueError:
+                widget.value = 0
+            setattr(self.axis, property, widget.value)
+        return connection
 
     def activate(self):
         for widget in self.findChildren(QWidget):
             widget.setEnabled(True)
+
+        self.voltage_widget.set_button.clicked.connect(self.connect_to_axis(self.voltage_widget, "voltage"))
+        self.frequency_widget.set_button.clicked.connect(self.setFrequency)
+        self.offset_widget.set_button.clicked.connect(self.setOffsetVoltage)
+        self.step_widget.minus_button.clicked.connect(self.stepp)
+        self.step_widget.plus_button.clicked.connect(self.stepp)
+        self.cmover_button.pressed.connect(self.stepp)
+        self.cmovel_button.released.connect(self.stepp)
 
     def deactivate(self):
         for widget in self.findChildren(QWidget):
@@ -106,6 +168,7 @@ class OpenLoopWidget(QFrame):
 
 if __name__ == "__main__":
     app = QApplication([])
-    olw = OpenLoopWidget()
+    olw = OpenLoopWidget(axis=DummyAxis())
+    olw.activate()
     olw.show()
     app.exec()

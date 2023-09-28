@@ -114,7 +114,7 @@ class SetWidget(QWidget):
 
     def __init__(self, title="", symbols: int = 7, unit: str = "", **kwargs):
         super().__init__()
-        self.value = 0.01235578995675
+        self.value = 0
         self.symbols = symbols
         self.unit = unit
 
@@ -179,6 +179,8 @@ class ControlBar(QWidget):
 
         self.move_button = QPushButton()
 
+        self.capacity_button = QLabel("Cap: NaN")
+
         self.powered = False
         self.movable = False
 
@@ -216,6 +218,7 @@ class ControlBar(QWidget):
         main_layout.setContentsMargins(0, 0, 0, 0)
         text_layout = QHBoxLayout()
         text_layout.addWidget(self.title_label)
+        text_layout.addWidget(self.capacity_button)
         text_layout.addStretch()
         text_layout.addWidget(self.status_label)
         text_layout.addWidget(self.move_button)
