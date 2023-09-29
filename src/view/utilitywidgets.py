@@ -241,6 +241,26 @@ class ControlBar(QWidget):
         else:
             self.power_button.setText("OFF")
 
+def connect_button_to_axis(
+        widget,
+        button,
+        actions,
+        axis,
+        property
+        ):
+
+    def connection():
+        try:
+            widget.value = float(widget.input.text())
+        except ValueError:
+            widget.value = 0
+        setattr(axis, property, widget.value)
+
+    for action in actions:
+        event = getattr(button, action)
+        event.connect(connection)
+
+    return connection
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
