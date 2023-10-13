@@ -9,7 +9,9 @@ from PyQt6.QtWidgets import (
     QMainWindow,
     QVBoxLayout,
     QWidget,
-    QInputDialog, QLabel, QFrame,
+    QInputDialog,
+    QLabel,
+    QFrame,
 )
 from src.view import OpenLoopWidget
 
@@ -19,7 +21,6 @@ from src.view.instrumentwidget import InstrumentWidget
 
 
 class ANCGUI(InstrumentWidget):
-
     def __init__(self):
         super().__init__()
         self.ip_address = None
@@ -34,7 +35,9 @@ class ANCGUI(InstrumentWidget):
 
         lineFrame = QFrame()
         lineFrame.setFixedSize(100, 2)
-        lineFrame.setStyleSheet("QFrame {border: 2px solid black; border-radius: 20px; }")
+        lineFrame.setStyleSheet(
+            "QFrame {border: 2px solid black; border-radius: 20px; }"
+        )
 
         for axi in self.axis:
             ax_widget = OpenLoopWidget(title=axi)
@@ -56,13 +59,17 @@ class ANCGUI(InstrumentWidget):
     def execute(self):
         pass
 
-    def connect_instrument(self, address: str, axis: list = None, passwd: str = "123456") -> bool:
+    def connect_instrument(
+        self, address: str, axis: list = None, passwd: str = "123456"
+    ) -> bool:
         if axis is None:
             axis = self.axis
 
         try:
             pass
-            ancController: ANC300Controller = None  # ANC300Controller(adapter=address, axisnames=axis, passwd=passwd)
+            ancController: ANC300Controller = (
+                None  # ANC300Controller(adapter=address, axisnames=axis, passwd=passwd)
+            )
         except:
             self.status = "Connection failed"
             return False

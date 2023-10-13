@@ -1,6 +1,10 @@
-from PyQt6.QtWidgets import QMainWindow, QLabel, QToolBar, QStatusBar, QDialog, QLineEdit, \
-    QDialogButtonBox, QVBoxLayout, QTextEdit, QPushButton, QHBoxLayout, QWidget, QGridLayout
-from PyQt6 import QtSerialPort, QtCore
+from PyQt6.QtWidgets import (
+    QMainWindow,
+    QLabel,
+    QStatusBar,
+    QWidget,
+    QGridLayout,
+)
 from pyqtgraph import PlotWidget
 
 
@@ -40,44 +44,6 @@ class UniGui(QMainWindow):
         status = QStatusBar()
         status.showMessage("I'm RUNNNING")
         self.setStatusBar(status)
-
-
-class SerialConnect(QDialog):
-    def __init__(self, parent=None):
-        super(SerialConnect, self).__init__(parent)
-        self.output_te = QTextEdit()
-        self.output_te.setReadOnly(True)
-        self.button = QPushButton(text="Connect")
-
-        self.button.setCheckable(True)
-        self.button.toggled.connect(self.on_toggled)
-
-        lay = QVBoxLayout(self)
-        hlay = QHBoxLayout()
-        lay.addLayout(hlay)
-        lay.addWidget(self.output_te)
-        lay.addWidget(self.button)
-
-        # self.ports = QtSerialPort.QSerialPortInfo.availablePorts()
-        # self.serial = QtSerialPort.QSerialPort(self.ports[2])
-        # self.serial.readyRead.connect(self.receive)
-
-    @QtCore.pyqtSlot()
-    def receive(self):
-        while self.serial.canReadLine():
-            text = self.serial.readLine().data().decode()
-            text = text.rstrip('\r\n')
-            self.output_te.append(text)
-
-    @QtCore.pyqtSlot(bool)
-    def on_toggled(self, checked):
-        self.button.setText("Disconnect" if checked else "Connect")
-        if checked:
-            if not self.serial.isOpen():
-                if not self.serial.open(QtCore.QIODeviceBase.OpenModeFlag.ReadOnly):
-                    self.button.setChecked(False)
-        else:
-            self.serial.close()
 
 
 if __name__ == "__main__":
