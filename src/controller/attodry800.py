@@ -27,13 +27,16 @@ def main():
             return
 
         pressure = attodry.getPressure800()
-        temperature = attodry.getSampleTemperature()
-        lk_sample_temperature = attodry.get4KStageTemperature()
         user_temperature = attodry.getUserTemperature()
         turbo_pump_frequency = attodry.GetTurbopumpFrequ800()
 
         max_heat_power = attodry.getSampleHeaterMaximumPower()
         heat_power = attodry.getSampleHeaterPower()
+
+        time.sleep(30)
+
+        temperature = attodry.getSampleTemperature()
+        lk_sample_temperature = attodry.get4KStageTemperature()
 
         print("The current pressure is: " + str(pressure) + " mbar")
         print("The current temperature is: " + str(temperature) + " K")
