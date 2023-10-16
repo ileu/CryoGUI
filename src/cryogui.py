@@ -1,13 +1,12 @@
 import sys
+
 import serial
-from PyQt6.QtCore import Qt, QTimer
+from PyQt6.QtCore import QTimer
 from PyQt6.QtSerialPort import QSerialPortInfo
 from PyQt6.QtWidgets import (
     QApplication,
     QMainWindow,
-    QTextEdit,
     QPushButton,
-    QVBoxLayout,
     QWidget,
     QFileDialog,
     QGridLayout,
@@ -15,17 +14,24 @@ from PyQt6.QtWidgets import (
     QComboBox,
 )
 
+from src.AttoDRY import AttoDRY, Cryostats
+
 
 class LoggerInterface(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        self.init_ui()
         self.serial_port = None
 
-        self.timer = QTimer(self)
-        self.timer.timeout.connect(self.read_and_log_data)
-        self.log_file = None
+        self.attodry_controller = AttoDRY(
+            setup_version=Cryostats.ATTODRY800, com_port=None
+        )
+
+        self.init_ui()
+
+        # self.timer = QTimer(self)
+        # self.timer.timeout.connect(self.read_and_log_data)
+        # self.log_file = None
 
     def init_ui(self):
         self.central_widget = QWidget(self)
@@ -44,13 +50,14 @@ class LoggerInterface(QMainWindow):
         connect_button.clicked.connect(self.connect_to_serial)
         self.layout.addWidget(connect_button, 0, 2)
 
+    @PyqtSlot()
     def connect_to_serial(self, serial_port: str = None):
         if serial_port is None:
             serial_port = self.port_combo.currentText()
         try:
-            self.serial_port = serial.Serial(
-                serial_port, 9600
-            )  # Modify baud rate as needed
+            self.attodry_controller.begin()
+            self.attodry_controller.Connect(serial_port)
+
             # self.timer.start(1000)  # Read data every second
         except Exception as e:
             self.text_edit.append(f"Failed to connect to serial port: {str(e)}")

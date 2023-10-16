@@ -1,12 +1,12 @@
 import time
 
-from src.AttoDRY.PyAttoDRY import Devices, AttoDRY
+from src.AttoDRY.PyAttoDRY import Cryostats, AttoDRY
 
 
 def main():
     # Test the attodry800 controller
     print("Connect to the AttoDRY")
-    attodry = AttoDRY(setup_version=Devices.ATTODRY800, com_port="COM5")
+    attodry = AttoDRY(setup_version=Cryostats.ATTODRY800, com_port="COM5")
 
     try:
         attodry.begin()
