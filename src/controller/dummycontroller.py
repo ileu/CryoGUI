@@ -10,7 +10,10 @@ class DummyController:
 
     def __getattr__(self, item):
         logger.debug(f"get {item}")
-        return super().__getattribute__(item)
+        try:
+            return super().__getattribute__(item)
+        except AttributeError:
+            return None
 
     def __setattr__(self, key, value):
         logger.debug(f"set {key}: {value}")

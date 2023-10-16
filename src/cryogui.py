@@ -34,6 +34,7 @@ class LoggerInterface(QMainWindow):
 
         self.attodry_controller = DummyAttoDRY()
         self.action_monitor = QTextEdit()
+        self.is_connected = False
 
         self.init_ui()
 
@@ -54,14 +55,19 @@ class LoggerInterface(QMainWindow):
         self.port_combo.addItems([port.portName() for port in ports])
         self.layout.addWidget(self.port_combo, 0, 1)
 
-        connect_button = QPushButton("Connect")
-        connect_button.clicked.connect(self.connect_to_serial)
-        self.layout.addWidget(connect_button, 0, 2)
+        self.connect_button = QPushButton("Connect")
+        self.connect_button.clicked.connect(self.connect_controller)
+        self.layout.addWidget(self.connect_button, 0, 2)
+
+        self.disconnect_button = QPushButton("Disconnect")
+        self.disconnect_button.setEnabled(False)
+        self.disconnect_button.clicked.connect(self.disconnect_controller)
+        self.layout.addWidget(self.disconnect_button, 0, 3)
 
         self.action_monitor.setReadOnly(True)
-        self.layout.addWidget(self.action_monitor, 1, 0, 1, 3)
+        self.layout.addWidget(self.action_monitor, 1, 0, 1, 4)
 
-    def connect_to_serial(self, serial_port: str = None):
+    def connect_controller(self, serial_port: str = None):
         if serial_port is None:
             serial_port = self.port_combo.currentText()
         try:
@@ -70,8 +76,23 @@ class LoggerInterface(QMainWindow):
             # time.sleep(30)
 
             # self.timer.start(1000)  # Read data every second
+            self.connect_button.setEnabled(False)
+            self.disconnect_button.setEnabled(True)
+            self.action_monitor.append(f"Connected to serial port {serial_port}")
         except Exception as e:
             self.action_monitor.append(f"Failed to connect to serial port: {str(e)}")
+
+    def disconnect_controller(self):
+        try:
+            self.attodry_controller.Disconnect()
+            self.attodry_controller.end()
+
+            self.connect_button.setEnabled(True)
+            self.disconnect_button.setEnabled(False)
+            self.action_monitor.append(f"Disconnected from serial port")
+            # self.timer.stop()
+        except Exception as e:
+            self.action_monitor.append(f"Failed to disconnect from serial port: {str(e)}")
 
     def read_and_log_data(self):
         if self.serial_port:

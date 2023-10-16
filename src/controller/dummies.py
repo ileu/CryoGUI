@@ -33,9 +33,16 @@ class DummyAttoDRY(DummyController):
     def begin(self):
         self.started = True
 
+    def end(self):
+        self.started = False
+
     def Connect(self, com_port):
         self.connected = True
         self.com_port = com_port
+
+    def Disconnect(self):
+        self.connected = False
+        self.com_port = None
 
 
 class DummyAxis(PositionQty):
@@ -77,8 +84,7 @@ class DummyAxis(PositionQty):
             self._position = self._target_position
         else:
             self._position += (
-                elapsed_time / 3 * (self._target_position - self._position)
-            )
+                    elapsed_time / 3 * (self._target_position - self._position))
 
     def check_moving_axis(self):
         if self._move() - self.position_m < 1e-6:
