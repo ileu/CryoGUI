@@ -33,18 +33,11 @@ class ANCGUI(InstrumentWidget):
         self.axis = ["LX", "LY", "LZ", "RX", "RY", "RZ"]
         self.axis_widgets = {}
 
-        lineFrame = QFrame()
-        lineFrame.setFixedSize(100, 2)
-        lineFrame.setStyleSheet(
-            "QFrame {border: 2px solid black; border-radius: 20px; }"
-        )
-
         for axi in self.axis:
             ax_widget = OpenLoopWidget(title=axi)
             self.axis_widgets[axi] = ax_widget
             ax_widget.deactivate()
             mainLayout.addWidget(ax_widget)
-            mainLayout.addWidget(lineFrame)
 
         mainLayout.addWidget(self.status_label)
         self.setLayout(mainLayout)

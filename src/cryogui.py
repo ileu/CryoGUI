@@ -1,6 +1,7 @@
 import sys
 import serial
 from PyQt6.QtCore import Qt, QTimer
+from PyQt6.QtSerialPort import QSerialPortInfo
 from PyQt6.QtWidgets import (
     QApplication,
     QMainWindow,
@@ -9,6 +10,9 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
     QFileDialog,
+    QGridLayout,
+    QLabel,
+    QComboBox,
 )
 
 
@@ -26,30 +30,30 @@ class LoggerInterface(QMainWindow):
     def init_ui(self):
         self.central_widget = QWidget(self)
         self.setCentralWidget(self.central_widget)
-        self.layout = QVBoxLayout()
+        self.layout = QGridLayout()
         self.central_widget.setLayout(self.layout)
 
-        self.text_edit = QTextEdit(self)
-        self.layout.addWidget(self.text_edit)
+        port_label = QLabel("Port")
+        self.layout.addWidget(port_label, 0, 0)
+        ports = [port for port in QSerialPortInfo.availablePorts()]
+        self.port_combo = QComboBox()
+        self.port_combo.addItems([port.portName() for port in ports])
+        self.layout.addWidget(self.port_combo, 0, 1)
 
-        self.connect_button = QPushButton("Connect to Serial Port")
-        self.layout.addWidget(self.connect_button)
-        self.connect_button.clicked.connect(self.connect_to_serial)
+        connect_button = QPushButton("Connect")
+        connect_button.clicked.connect(self.connect_to_serial)
+        self.layout.addWidget(connect_button, 0, 2)
 
-        self.save_button = QPushButton("Save Log")
-        self.layout.addWidget(self.save_button)
-        self.save_button.clicked.connect(self.save_log)
-
-    def connect_to_serial(self):
-        port_name, ok = QFileDialog.getOpenFileName(self, "Select Serial Port")
-        if ok:
-            try:
-                self.serial_port = serial.Serial(
-                    port_name, 9600
-                )  # Modify baud rate as needed
-                self.timer.start(1000)  # Read data every second
-            except Exception as e:
-                self.text_edit.append(f"Failed to connect to serial port: {str(e)}")
+    def connect_to_serial(self, serial_port: str = None):
+        if serial_port is None:
+            serial_port = self.port_combo.currentText()
+        try:
+            self.serial_port = serial.Serial(
+                serial_port, 9600
+            )  # Modify baud rate as needed
+            # self.timer.start(1000)  # Read data every second
+        except Exception as e:
+            self.text_edit.append(f"Failed to connect to serial port: {str(e)}")
 
     def read_and_log_data(self):
         if self.serial_port:
