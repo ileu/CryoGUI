@@ -1,7 +1,9 @@
+import time
 from datetime import datetime
 from typing import List
 
 from src.controller._quantities import PositionQty
+from src.controller.dummycontroller import DummyController
 
 
 class DummyAMC300Controller:
@@ -19,6 +21,21 @@ class DummyAMC300Controller:
 
     def disconnect(self):
         return True
+
+
+class DummyAttoDRY(DummyController):
+    def __init__(self):
+        super().__init__()
+        self.started = False
+        self.connected = False
+        self.com_port = None
+
+    def begin(self):
+        self.started = True
+
+    def Connect(self, com_port):
+        self.connected = True
+        self.com_port = com_port
 
 
 class DummyAxis(PositionQty):
