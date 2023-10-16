@@ -5,23 +5,35 @@ from PyQt6.QtWidgets import (
     QApplication,
     QVBoxLayout,
     QHBoxLayout,
-    QGridLayout, QFrame
+    QGridLayout,
+    QFrame,
 )
 from pymeasure.instruments.attocube.anc300 import Axis
 
-from src.view.utilitywidgets import SetWidget, IncrementWidget, push_button_style, \
-    ControlBar
+from src.view.utilitywidgets import (
+    SetWidget,
+    IncrementWidget,
+    push_button_style,
+    ControlBar,
+)
+
+import logging
+
+logger = logging.getLogger(__name__)
+
+
+def scream():
+    logger.info("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
 
 
 class DummyAxis:
-
     def __init__(
-            self,
-            voltage: float = 0,
-            frequency: float = 0,
-            offset: float = 0,
-            step: float = 0,
-            status: str = "GND"
+        self,
+        voltage: float = 0,
+        frequency: float = 0,
+        offset: float = 0,
+        step: float = 0,
+        status: str = "GND",
     ):
         self.voltage = voltage
         self.frequency = frequency
@@ -29,29 +41,23 @@ class DummyAxis:
         self.step = step
         self.status = status
 
-    def __getattr__(
-            self,
-            item
-    ):
-        print(f"get {item}")
+    def __getattr__(self, item):
+        logger.info(f"get {item}")
         return super().__getattribute__(item)
 
-    def __setattr__(
-            self,
-            key,
-            value
-    ):
-        print(f"set {key}: {value}")
+    def __setattr__(self, key, value):
+        logger.info(f"set {key}: {value}")
         super().__setattr__(key, value)
 
 
 class OpenLoopWidget(QFrame):
     def __init__(
-            self,
-            parent: QWidget = None,
-            axis: Axis | DummyAxis = None,
-            title: str = "Quantity",
-            **kwargs
+        self,
+        parent: QWidget = None,
+        axis: Axis | DummyAxis = None,
+        title: str = "Quantity",
+        lock_optimize_on_start: bool = True,
+        **kwargs,
     ):
         super().__init__(parent, **kwargs)
         self.control_bar = ControlBar()
@@ -66,16 +72,14 @@ class OpenLoopWidget(QFrame):
         self.step_widget = IncrementWidget(title="Step")
 
         self.optimize_button = QPushButton("Optimize")
+        self.optimize_button.setEnabled(False)
         self.lock_button = QPushButton("L")
         self.cmover_button = QPushButton(">>")
         self.cmovel_button = QPushButton("<<")
 
         self.grounded = False
         self.movable = False
-        self.locked_optimize = True
-
-        for key, value in kwargs:
-            self.__setattr__(key, value)
+        self.locked_optimize = lock_optimize_on_start
 
         self.initUI()
 
@@ -85,20 +89,17 @@ class OpenLoopWidget(QFrame):
         else:
             self.axis = axis
 
-    def initUI(
-            self
-    ):
+    def initUI(self):
         self.setContentsMargins(0, 0, 0, 0)
         self.optimize_button.setStyleSheet(push_button_style)
         self.optimize_button.setFixedSize(100, 30)
-        print(self.locked_optimize)
-
+        self.optimize_button.clicked.connect(scream)
 
         self.lock_button.setStyleSheet(push_button_style)
         self.lock_button.setFixedSize(30, 30)
         self.lock_button.setCheckable(True)
         self.lock_button.setChecked(self.locked_optimize)
-        self.lock_button.toggled.connect(self.changeOptimizeLock)
+        self.lock_button.toggled.connect(self.change_optimize_lock)
 
         self.cmover_button.setStyleSheet(push_button_style)
         self.cmover_button.setFixedSize(40, 20)
@@ -112,19 +113,11 @@ class OpenLoopWidget(QFrame):
         main_layout.addWidget(self.control_bar)
         control_layout = QGridLayout()
         control_layout.setSpacing(5)
-        main_layout.addLayout(
-            control_layout
-        )
+        main_layout.addLayout(control_layout)
 
-        control_layout.addWidget(
-            self.voltage_widget, 0, 0
-        )
-        control_layout.addWidget(
-            self.frequency_widget, 1, 0
-        )
-        control_layout.addWidget(
-            self.offset_widget, 0, 1
-        )
+        control_layout.addWidget(self.voltage_widget, 0, 0)
+        control_layout.addWidget(self.frequency_widget, 1, 0)
+        control_layout.addWidget(self.offset_widget, 0, 1)
         optimize_layout = QHBoxLayout()
         optimize_layout.addWidget(
             self.optimize_button, alignment=Qt.AlignmentFlag.AlignCenter
@@ -138,7 +131,9 @@ class OpenLoopWidget(QFrame):
 
         cmove_layout = QHBoxLayout()
         cmove_layout.setSpacing(0)
-        cmove_layout.addWidget(self.cmovel_button, alignment=Qt.AlignmentFlag.AlignRight)
+        cmove_layout.addWidget(
+            self.cmovel_button, alignment=Qt.AlignmentFlag.AlignRight
+        )
         cmove_layout.addWidget(self.cmover_button, alignment=Qt.AlignmentFlag.AlignLeft)
 
         step_layout.addLayout(cmove_layout)
@@ -147,37 +142,33 @@ class OpenLoopWidget(QFrame):
         main_layout.addStretch()
 
         self.setLayout(main_layout)
-        self.optimize_button.setEnabled(False)
 
-    def changeOptimizeLock(self):
-        print("Lock: " , self.locked_optimize)
+    def change_optimize_lock(self):
+        logger.info(f"Lock optimize: {self.locked_optimize}")
         self.locked_optimize = not self.locked_optimize
         self.lock_button.setChecked(self.locked_optimize)
         self.optimize_button.setEnabled(not self.locked_optimize)
 
-    def refresh_values(
-            self
-    ):
+    def refresh_values(self):
         pass
 
-    def connect_to_axis(
-            self,
-            widget,
-            property
-    ):
+    def connect_to_axis(self, widget, attribute):
         def connection():
             try:
                 widget.value = float(widget.input.text())
             except ValueError:
                 widget.value = 0
-            setattr(self.axis, property, widget.value)
+            setattr(self.axis, attribute, widget.value)
 
         return connection
 
-    def activate(
-            self
-    ):
+    def activate(self):
         for widget in self.findChildren(QWidget):
+            if widget == self.optimize_button:
+                self.optimize_button.setEnabled(not self.locked_optimize)
+                logger.debug(f"Special enabling {widget}")
+                continue
+            logger.debug(f"Enabling {widget}")
             widget.setEnabled(True)
 
         self.control_bar.power_button.setText(self.axis.status)
@@ -204,16 +195,19 @@ class OpenLoopWidget(QFrame):
             self.connect_to_axis(self.step_widget, "step")
         )
 
-    def deactivate(
-            self
-    ):
+    def deactivate(self):
         for widget in self.findChildren(QWidget):
+            if widget == self.optimize_button:
+                logger.debug(f"Skipping {widget}")
+                continue
+            logger.debug(f"Disabling {widget}")
             widget.setEnabled(False)
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
     app = QApplication([])
-    olw = OpenLoopWidget(axis=DummyAxis())
+    olw = OpenLoopWidget(axis=DummyAxis(), title="Test", lock_optimize_on_start=False)
     olw.activate()
     olw.show()
     app.exec()
