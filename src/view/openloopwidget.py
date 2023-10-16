@@ -9,6 +9,7 @@ from PyQt6.QtWidgets import (
     QGridLayout,
     QFrame,
 )
+from PyQt6.QtCore import pyqtSignal
 from pymeasure.instruments.attocube.anc300 import Axis
 
 from src.view.utilitywidgets import (
@@ -27,14 +28,15 @@ def scream():
     logger.info("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
 
 
-class DummyAxis:
+class DummyClosedLoopAxis:
+
     def __init__(
-        self,
-        voltage: float = 0,
-        frequency: float = 0,
-        offset: float = 0,
-        step: float = 0,
-        status: str = "GND",
+            self,
+            voltage: float = 0,
+            frequency: float = 0,
+            offset: float = 0,
+            step: float = 0,
+            status: str = "GND"
     ):
         self.voltage = voltage
         self.frequency = frequency
@@ -53,12 +55,12 @@ class DummyAxis:
 
 class OpenLoopWidget(QFrame):
     def __init__(
-        self,
-        parent: QWidget = None,
-        axis: Axis | DummyAxis = None,
-        title: str = "Quantity",
-        lock_optimize_on_start: bool = True,
-        **kwargs,
+            self,
+            parent: QWidget = None,
+            axis: Axis | DummyClosedLoopAxis = None,
+            title: str = "Quantity",
+            lock_optimize_on_start: bool = True,
+            **kwargs
     ):
         super().__init__(parent, **kwargs)
         self.control_bar = ControlBar()
@@ -222,7 +224,8 @@ class OpenLoopWidget(QFrame):
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     app = QApplication([])
-    olw = OpenLoopWidget(axis=DummyAxis(), title="Test", lock_optimize_on_start=False)
+    # olw = OpenLoopWidget(axis=DummyAxis(), title="Test", lock_optimize_on_start=False)
+    olw = OpenLoopWidget(axis=DummyClosedLoopAxis())
     olw.activate()
     olw.show()
     app.exec()

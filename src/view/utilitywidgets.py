@@ -1,6 +1,7 @@
 import sys
 from typing import Callable
 
+from PyQt6 import QtCore
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QDoubleValidator
 from PyQt6.QtWidgets import (
@@ -34,9 +35,9 @@ line_edit_style_large = (
 
 
 class IncrementWidget(QWidget):
-    def __init__(
-        self, parent: QWidget = None, title: str = "TEST", unit: str = "", **kwargs
-    ):
+    onValueChanged = QtCore.pyqtSignal(float)
+
+    def __init__(self, parent: QWidget = None, title: str = "TEST", unit: str = "", **kwargs):
         super().__init__(parent, **kwargs)
         self.value = 0.0
 
@@ -111,8 +112,8 @@ class IncrementWidget(QWidget):
             return
 
         self.value += incr_number
-        if self._callOnValueChanged is not None:
-            self._callOnValueChanged(value=self.value)
+
+        self.onValueChanged.emit(self.value)
 
     def decrementValue(self):
         try:
@@ -121,14 +122,13 @@ class IncrementWidget(QWidget):
             return
 
         self.value -= incr_number
-        if self._callOnValueChanged is not None:
-            self._callOnValueChanged(value=self.value)
 
-    def onValueChanged(self, callback: Callable[[float], None]) -> None:
-        self._callOnValueChanged = callback
+        self.onValueChanged.emit(self.value)
 
 
 class SetWidget(QWidget):
+    onValueChanged = QtCore.pyqtSignal(float)
+
     def __init__(self, title="", symbols: int = 7, unit: str = "", **kwargs):
         super().__init__()
         self.value = 0
@@ -182,11 +182,7 @@ class SetWidget(QWidget):
         except ValueError:
             self.value = 0.0
 
-        if self._callOnValueChanged is not None:
-            self._callOnValueChanged(value=self.value)
-
-    def onValueChanged(self, callback: Callable[[float], None]) -> None:
-        self._callOnValueChanged = callback
+        self.onValueChanged.emit(self.value)
 
 
 class ControlBar(QWidget):
@@ -261,15 +257,22 @@ class ControlBar(QWidget):
                 self.style().standardIcon(QStyle.StandardPixmap.SP_MediaPlay)
             )
 
-    def toggle_power(self):
-        self.powered = not self.powered
-        if self.powered:
+    @QtCore.pyqtSlot(bool)
+    def toggle_power(self, powered):
+        self.powered = not powered
+        if powered:
             self.power_button.setText("ON")
         else:
             self.power_button.setText("OFF")
 
 
-def connect_button_to_axis(widget, button, actions, axis, property):
+def connect_button_to_axis(
+        widget,
+        button,
+        actions,
+        axis,
+        property
+):
     def connection():
         try:
             widget.value = float(widget.input.text())

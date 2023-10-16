@@ -13,7 +13,7 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt
 
 from src.controller.axis import Axis
-from src.controller.dummies import DummyAxis
+from src.controller.dummies import DummyOpenLoopAxis
 
 
 class ClosedLoopWidget(QWidget):
@@ -324,7 +324,7 @@ class ClosedLoopWidget(QWidget):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    window = ClosedLoopWidget(positionqty=DummyAxis(0))
+    window = ClosedLoopWidget(positionqty=DummyOpenLoopAxis(0))
     window.activate()
     window.show()
     sys.exit(app.exec())

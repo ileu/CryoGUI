@@ -8,20 +8,20 @@ class DummyAMC300Controller:
     def __init__(self, ip):
         self.ip = ip
 
-        self.axes: List[DummyAxis] = []
+        self.axes: List[DummyOpenLoopAxis] = []
 
         self._position = 0
 
     def connect(self):
         for i in range(3):
-            self.axes.append(DummyAxis(i))
+            self.axes.append(DummyOpenLoopAxis(i))
         return True
 
     def disconnect(self):
         return True
 
 
-class DummyAxis(PositionQty):
+class DummyOpenLoopAxis(PositionQty):
     def __init__(self, index):
         self._position = 0
         self._target_position = 0
