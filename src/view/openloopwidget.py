@@ -1,4 +1,5 @@
 from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QPixmap, QIcon
 from PyQt6.QtWidgets import (
     QWidget,
     QPushButton,
@@ -73,7 +74,7 @@ class OpenLoopWidget(QFrame):
 
         self.optimize_button = QPushButton("Optimize")
         self.optimize_button.setEnabled(False)
-        self.lock_button = QPushButton("L")
+        self.lock_button = QPushButton()
         self.cmover_button = QPushButton(">>")
         self.cmovel_button = QPushButton("<<")
 
@@ -98,8 +99,9 @@ class OpenLoopWidget(QFrame):
         self.lock_button.setStyleSheet(push_button_style)
         self.lock_button.setFixedSize(30, 30)
         self.lock_button.setCheckable(True)
-        self.lock_button.setChecked(self.locked_optimize)
         self.lock_button.toggled.connect(self.change_optimize_lock)
+
+        self.update_locked_button()
 
         self.cmover_button.setStyleSheet(push_button_style)
         self.cmover_button.setFixedSize(40, 20)
@@ -146,7 +148,20 @@ class OpenLoopWidget(QFrame):
     def change_optimize_lock(self):
         logger.info(f"Lock optimize: {self.locked_optimize}")
         self.locked_optimize = not self.locked_optimize
+        self.update_locked_button()
+
+    def update_locked_button(self):
         self.lock_button.setChecked(self.locked_optimize)
+        if self.locked_optimize:
+            self.lock_button.setIcon(
+                QIcon(r"C:\Users\ONG-Student01\IdeaProjects\CryoGUI\src\icons\lock.png")
+            )
+        else:
+            self.lock_button.setIcon(
+                QIcon(
+                    r"C:\Users\ONG-Student01\IdeaProjects\CryoGUI\src\icons\unlock.png"
+                )
+            )
         self.optimize_button.setEnabled(not self.locked_optimize)
 
     def refresh_values(self):

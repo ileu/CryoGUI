@@ -3,7 +3,16 @@ from typing import Callable
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QDoubleValidator
-from PyQt6.QtWidgets import QWidget, QLineEdit, QPushButton, QApplication, QVBoxLayout, QHBoxLayout, QLabel, QStyle
+from PyQt6.QtWidgets import (
+    QWidget,
+    QLineEdit,
+    QPushButton,
+    QApplication,
+    QVBoxLayout,
+    QHBoxLayout,
+    QLabel,
+    QStyle,
+)
 
 push_button_style = (
     "QPushButton {border: 2px solid black; padding-bottom: 2px; "
@@ -11,7 +20,7 @@ push_button_style = (
     "QPushButton:hover {background-color: rgb(228,241,251); }"
     "QPushButton:pressed {background-color: rgb(204,228,247); }"
     "QPushButton:disabled {background-color: rgb(200,200,200); }"
-    "QPushButton:checked {background-color: rgb(40,40,40); }"
+    "QPushButton:checked {background-color: rgb(150,159,161); }"
 )
 line_edit_stale_small = (
     "QLineEdit { background-color: white; border: 2px solid black; border-radius: 5px; font-size: 16px;}"
@@ -25,7 +34,9 @@ line_edit_style_large = (
 
 
 class IncrementWidget(QWidget):
-    def __init__(self, parent: QWidget = None, title: str = "TEST", unit: str = "", **kwargs):
+    def __init__(
+        self, parent: QWidget = None, title: str = "TEST", unit: str = "", **kwargs
+    ):
         super().__init__(parent, **kwargs)
         self.value = 0.0
 
@@ -39,11 +50,11 @@ class IncrementWidget(QWidget):
         self.initUI()
 
     def initUI(self):
-        self.setContentsMargins(0,0,0,0)
-        self.title.setContentsMargins(0,0,0,0)
+        self.setContentsMargins(0, 0, 0, 0)
+        self.title.setContentsMargins(0, 0, 0, 0)
 
         self.input.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.input.setContentsMargins(0,0,0,0)
+        self.input.setContentsMargins(0, 0, 0, 0)
         self.input.setStyleSheet(line_edit_style_large)
         self.input.setFixedSize(65, 40)
         self.input.setValidator(QDoubleValidator())
@@ -59,7 +70,7 @@ class IncrementWidget(QWidget):
         )
         self.plus_button.setFixedSize(24, 40)
         self.plus_button.clicked.connect(self.incrementValue)
-        self.plus_button.setContentsMargins(0,0,0,0)
+        self.plus_button.setContentsMargins(0, 0, 0, 0)
 
         self.minus_button.setStyleSheet(
             "QPushButton { border: 2px solid black; "
@@ -71,7 +82,7 @@ class IncrementWidget(QWidget):
         )
         self.minus_button.setFixedSize(24, 40)
         self.minus_button.clicked.connect(self.decrementValue)
-        self.minus_button.setContentsMargins(0,0,0,0)
+        self.minus_button.setContentsMargins(0, 0, 0, 0)
 
         main_layout = QVBoxLayout()
         main_layout.setContentsMargins(0, 0, 0, 0)
@@ -79,7 +90,7 @@ class IncrementWidget(QWidget):
         main_layout.setSpacing(0)
 
         side_layout = QHBoxLayout()
-        side_layout.setContentsMargins(0,0,0,0)
+        side_layout.setContentsMargins(0, 0, 0, 0)
         side_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         side_layout.setSpacing(0)
 
@@ -118,7 +129,6 @@ class IncrementWidget(QWidget):
 
 
 class SetWidget(QWidget):
-
     def __init__(self, title="", symbols: int = 7, unit: str = "", **kwargs):
         super().__init__()
         self.value = 0
@@ -135,16 +145,19 @@ class SetWidget(QWidget):
 
     def initUI(self):
         self.input.setAlignment(Qt.AlignmentFlag.AlignRight)
-        self.input.setStyleSheet(line_edit_stale_small + "QLineEdit { border-top-right-radius: 0px; border-bottom-right-radius: 0px;}")
+        self.input.setStyleSheet(
+            line_edit_stale_small
+            + "QLineEdit { border-top-right-radius: 0px; border-bottom-right-radius: 0px;}"
+        )
         self.input.setFixedSize((self.symbols + 1) * 10, 24)  # +1 because decimal point
         self.input.setValidator(QDoubleValidator())
         self.input.returnPressed.connect(self.setValue)
-        self.input.setPlaceholderText(f"{self.value}"[:self.symbols - 1])
+        self.input.setPlaceholderText(f"{self.value}"[: self.symbols - 1])
         self.input.setMaxLength(int(self.symbols))
 
-
         self.set_button.setStyleSheet(
-            push_button_style + "QPushButton { border-top-left-radius: 0px; border-bottom-left-radius: 0px;}"
+            push_button_style
+            + "QPushButton { border-top-left-radius: 0px; border-bottom-left-radius: 0px;}"
         )
         self.set_button.setFixedSize(50, 24)
         self.set_button.clicked.connect(self.setValue)
@@ -196,7 +209,9 @@ class ControlBar(QWidget):
 
     def initUI(self):
         self.move_button.setCheckable(True)
-        self.move_button.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_MediaPlay))
+        self.move_button.setIcon(
+            self.style().standardIcon(QStyle.StandardPixmap.SP_MediaPlay)
+        )
         self.move_button.setFixedSize(30, 20)
         self.move_button.setStyleSheet(
             "QPushButton {border: 2px solid black; padding-bottom: 0px; "
@@ -238,9 +253,13 @@ class ControlBar(QWidget):
     def toggle_moveable(self):
         self.movable = not self.movable
         if self.movable:
-            self.move_button.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_MediaPause))
+            self.move_button.setIcon(
+                self.style().standardIcon(QStyle.StandardPixmap.SP_MediaPause)
+            )
         else:
-            self.move_button.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_MediaPlay))
+            self.move_button.setIcon(
+                self.style().standardIcon(QStyle.StandardPixmap.SP_MediaPlay)
+            )
 
     def toggle_power(self):
         self.powered = not self.powered
@@ -249,14 +268,8 @@ class ControlBar(QWidget):
         else:
             self.power_button.setText("OFF")
 
-def connect_button_to_axis(
-        widget,
-        button,
-        actions,
-        axis,
-        property
-        ):
 
+def connect_button_to_axis(widget, button, actions, axis, property):
     def connection():
         try:
             widget.value = float(widget.input.text())
@@ -269,6 +282,7 @@ def connect_button_to_axis(
         event.connect(connection)
 
     return connection
+
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
