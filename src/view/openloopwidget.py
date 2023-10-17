@@ -115,6 +115,8 @@ class OpenLoopWidget(QFrame):
             self.axis = axis
 
     def initUI(self):
+        self.setObjectName("OpenLoopWidget")
+        self.setStyleSheet("#OpenLoopWidget {border-bottom: 3px solid darkgray; }")
         self.setContentsMargins(0, 0, 0, 0)
         self.optimize_button.setStyleSheet(push_button_style)
         self.optimize_button.setFixedSize(100, 30)
@@ -134,7 +136,7 @@ class OpenLoopWidget(QFrame):
         self.cmovel_button.setFixedSize(40, 20)
 
         main_layout = QVBoxLayout()
-        main_layout.setSpacing(0)
+        main_layout.setSpacing(2)
 
         main_layout.addWidget(self.control_bar)
         control_layout = QGridLayout()
@@ -153,7 +155,7 @@ class OpenLoopWidget(QFrame):
 
         step_layout = QVBoxLayout()
         step_layout.setSpacing(0)
-        step_layout.addWidget(self.step_widget)
+        step_layout.addWidget(self.step_widget, alignment=Qt.AlignmentFlag.AlignLeft)
 
         cmove_layout = QHBoxLayout()
         cmove_layout.setSpacing(0)
