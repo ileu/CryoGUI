@@ -35,6 +35,8 @@ class Mover(QRunnable):
 
 
 class Window(QMainWindow):
+    shouted = pyqtSignal(int)
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setupUi()
@@ -56,10 +58,10 @@ class Window(QMainWindow):
         stopBtn.clicked.connect(self.stopTask)
         # Set the layout
         self.interval = QLineEdit()
-        self.interval.setValidator(QIntValidator())
+        self.interval.setValidator(QIntValidator(bottom=100))
         self.interval.setText("1000")
 
-        self.interval.textChanged.connect(
+        self.interval.editingFinished.connect(
             lambda: self.timer.setInterval(int(self.interval.text()))
         )
 
@@ -69,12 +71,19 @@ class Window(QMainWindow):
         layout.addWidget(stopBtn)
         layout.addWidget(self.interval)
         self.centralWidget.setLayout(layout)
+        self.shouts = 0
+        self.shouted.connect(self.talk)
 
     def runTasks(self):
         self.timer.start(1000)
 
+    def talk(self, word):
+        print(word, self.timer.interval())
+
     def task(self):
         print("THIS IS A TASK")
+        self.shouted.emit(self.shouts)
+        self.shouts += 1
 
     def stopTask(self):
         self.timer.stop()

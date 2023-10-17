@@ -1,8 +1,10 @@
+import os
 import sys
 import time
 
 from PyQt6 import QtCore
-from PyQt6.QtCore import QTimer
+from PyQt6.QtCore import QTimer, QThread
+from PyQt6.QtGui import QIntValidator
 from PyQt6.QtSerialPort import QSerialPortInfo
 from PyQt6.QtWidgets import (
     QApplication,
@@ -14,12 +16,18 @@ from PyQt6.QtWidgets import (
     QLabel,
     QComboBox,
     QTextEdit,
+    QLineEdit,
 )
 
 from src.controller.dummies import DummyAttoDRY
 
 
 # from src.AttoDRY import AttoDRY, Cryostats
+
+
+class ConnectionManager(QThread):
+    def __init__(self):
+        pass
 
 
 class LoggerInterface(QMainWindow):
@@ -55,17 +63,65 @@ class LoggerInterface(QMainWindow):
         self.port_combo.addItems([port.portName() for port in ports])
         self.layout.addWidget(self.port_combo, 0, 1)
 
+        self.logging_timer = QTimer(
+            self,
+        )
+        self.logging_timer.timeout.connect(self.log)
+
+        self.logging_interval_edit = QLineEdit("1000")
+        self.logging_interval_edit.editingFinished.connect(
+            lambda: self.logging_timer.setInterval(
+                int(self.logging_interval_edit.text())
+            )
+        )
+        self.logging_interval_edit.setValidator(QIntValidator(bottom=100))
+        self.logging_interval_edit.setEnabled(False)
+        self.layout.addWidget(self.logging_interval_edit, 2, 2)
+        self.layout.addWidget(QLabel("Logging Interval (ms)"), 2, 1)
+
         self.connect_button = QPushButton("Connect")
         self.connect_button.clicked.connect(self.connect_controller)
         self.layout.addWidget(self.connect_button, 0, 2)
+
+        self.log_file_browse = QPushButton("Start Logging")
+        self.file_locator = QLineEdit()
+        self.log_file_browse.clicked.connect(self.logging_manager)
 
         self.disconnect_button = QPushButton("Disconnect")
         self.disconnect_button.setEnabled(False)
         self.disconnect_button.clicked.connect(self.disconnect_controller)
         self.layout.addWidget(self.disconnect_button, 0, 3)
-
+        self.layout.addWidget(self.file_locator, 1, 0, 1, 3)
+        self.layout.addWidget(self.log_file_browse, 1, 3)
         self.action_monitor.setReadOnly(True)
-        self.layout.addWidget(self.action_monitor, 1, 0, 1, 4)
+        self.layout.addWidget(self.action_monitor, 3, 0, 1, 4)
+
+    def logging_manager(self, running: bool = False):
+        if not running:
+            dialog = QFileDialog(self)
+            dialog.setDirectory(os.path.join(os.path.dirname(__file__)))
+            dialog.setFileMode(QFileDialog.FileMode.AnyFile)
+            dialog.setViewMode(QFileDialog.ViewMode.List)
+
+            filenames, ok = dialog.getSaveFileName(
+                self, "Save File", "", "Text Files (*.txt);; CSV (*.csv)"
+            )
+            if ok and filenames:
+                self.file_locator.setText(filenames)
+
+                self.log_file_browse.setText("Stop Logging")
+                self.logging_timer.start(1000)
+                self.logging_interval_edit.setEnabled(True)
+            else:
+                self.log_file_browse.setChecked(False)
+        else:
+            self.log_file_browse.setText("Start Logging")
+            self.logging_timer.stop()
+            # self.log_file.close()
+            # self.log_file = None
+
+    def log(self):
+        print("logging", self.logging_timer.interval())
 
     def connect_controller(self, serial_port: str = None):
         if serial_port is None:
@@ -92,7 +148,9 @@ class LoggerInterface(QMainWindow):
             self.action_monitor.append(f"Disconnected from serial port")
             # self.timer.stop()
         except Exception as e:
-            self.action_monitor.append(f"Failed to disconnect from serial port: {str(e)}")
+            self.action_monitor.append(
+                f"Failed to disconnect from serial port: {str(e)}"
+            )
 
     def read_and_log_data(self):
         if self.serial_port:

@@ -116,7 +116,7 @@ class OpenLoopWidget(QFrame):
 
     def initUI(self):
         self.setObjectName("OpenLoopWidget")
-        self.setStyleSheet("#OpenLoopWidget {border-bottom: 3px solid darkgray; }")
+        self.setStyleSheet("#OpenLoopWidget {border-top: 3px solid darkgray;}")
         self.setContentsMargins(0, 0, 0, 0)
         self.optimize_button.setStyleSheet(push_button_style)
         self.optimize_button.setFixedSize(100, 30)
