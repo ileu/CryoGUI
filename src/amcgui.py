@@ -13,7 +13,10 @@ from PyQt6.QtWidgets import (
 )
 from src.view import ClosedLoopWidget
 
-from controller import AMC300Controller
+# from controller import AMC300Controller
+
+
+from controller.dummies import DummyAMC300Controller as AMC300Controller
 
 
 class GUI(QMainWindow):

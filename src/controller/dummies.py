@@ -2,12 +2,15 @@ import time
 from datetime import datetime
 from typing import List
 
+from src.controller import AMC300Controller
 from src.controller._quantities import PositionQty
 from src.controller.dummycontroller import DummyController
+from src.controller.axis import Axis
 
 
-class DummyAMC300Controller:
+class DummyAMC300Controller(AMC300Controller):
     def __init__(self, ip):
+        super().__init__(ip)
         self.ip = ip
 
         self.axes: List[DummyOpenLoopAxis] = []
@@ -45,8 +48,9 @@ class DummyAttoDRY(DummyController):
         self.com_port = None
 
 
-class DummyOpenLoopAxis(PositionQty):
+class DummyOpenLoopAxis(Axis):
     def __init__(self, index):
+        super().__init__(index, None)
         self._position = 0
         self._target_position = 0
         self.start_time = datetime.now()
@@ -114,3 +118,6 @@ class DummyOpenLoopAxis(PositionQty):
 
     def get_status_axis(self):
         return self.grounded
+
+    def get_target_position(self):
+        return self._target_position
