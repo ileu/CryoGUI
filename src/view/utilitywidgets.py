@@ -35,7 +35,7 @@ line_edit_style_large = (
 
 
 class IncrementWidget(QWidget):
-    onValueChanged = QtCore.pyqtSignal(float)
+    onValueChanged = QtCore.pyqtSignal(float, str)
 
     def __init__(self, parent: QWidget = None, title: str = "TEST", unit: str = "", **kwargs):
         super().__init__(parent, **kwargs)
@@ -113,7 +113,7 @@ class IncrementWidget(QWidget):
 
         self.value += incr_number
 
-        self.onValueChanged.emit(self.value)
+        self.onValueChanged.emit(self.value, "up")
 
     def decrementValue(self):
         try:
@@ -123,7 +123,7 @@ class IncrementWidget(QWidget):
 
         self.value -= incr_number
 
-        self.onValueChanged.emit(self.value)
+        self.onValueChanged.emit(self.value, "down")
 
 
 class SetWidget(QWidget):

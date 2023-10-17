@@ -1,4 +1,8 @@
-from PyQt6.QtCore import Qt
+import os
+import time
+
+from PyQt6 import QtCore
+from PyQt6.QtCore import Qt, QThread
 from PyQt6.QtGui import QPixmap, QIcon
 from PyQt6.QtWidgets import (
     QWidget,
@@ -28,15 +32,33 @@ def scream():
     logger.info("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
 
 
-class DummyClosedLoopAxis:
+class Mover(QThread):
+    finished = pyqtSignal()
 
+    def __init__(self, axis: Axis, step: float, direction: str, parent=None):
+        super().__init__(parent)
+        self.axis = axis
+        self.step = step
+        self.direction = direction
+
+    def run(self):
+        print("running")
+        time.sleep(30)
+        print("finished")
+        self.finished.emit()
+
+    def stop(self):
+        self.terminate()
+
+
+class DummyClosedLoopAxis:
     def __init__(
-            self,
-            voltage: float = 0,
-            frequency: float = 0,
-            offset: float = 0,
-            step: float = 0,
-            status: str = "GND"
+        self,
+        voltage: float = 0,
+        frequency: float = 0,
+        offset: float = 0,
+        step: float = 0,
+        status: str = "GND",
     ):
         self.voltage = voltage
         self.frequency = frequency
@@ -55,12 +77,12 @@ class DummyClosedLoopAxis:
 
 class OpenLoopWidget(QFrame):
     def __init__(
-            self,
-            parent: QWidget = None,
-            axis: Axis | DummyClosedLoopAxis = None,
-            title: str = "Quantity",
-            lock_optimize_on_start: bool = True,
-            **kwargs
+        self,
+        parent: QWidget = None,
+        axis: Axis | DummyClosedLoopAxis = None,
+        title: str = "Quantity",
+        lock_optimize_on_start: bool = True,
+        **kwargs,
     ):
         super().__init__(parent, **kwargs)
         self.control_bar = ControlBar()
@@ -153,31 +175,28 @@ class OpenLoopWidget(QFrame):
         self.update_locked_button()
 
     def update_locked_button(self):
-        self.lock_button.setChecked(self.locked_optimize)
+        path = os.path.join(os.path.dirname(__file__), r"..\icons")
+        print(path)
         if self.locked_optimize:
-            self.lock_button.setIcon(
-                QIcon(r"C:\Users\ONG-Student01\IdeaProjects\CryoGUI\src\icons\lock.png")
-            )
+            self.lock_button.setIcon(QIcon(path + r"\lock.png"))
         else:
-            self.lock_button.setIcon(
-                QIcon(
-                    r"C:\Users\ONG-Student01\IdeaProjects\CryoGUI\src\icons\unlock.png"
-                )
-            )
+            self.lock_button.setIcon(QIcon(path + r"\unlock.png"))
         self.optimize_button.setEnabled(not self.locked_optimize)
 
     def refresh_values(self):
         pass
 
-    def connect_to_axis(self, widget, attribute):
-        def connection():
-            try:
-                widget.value = float(widget.input.text())
-            except ValueError:
-                widget.value = 0
-            setattr(self.axis, attribute, widget.value)
-
-        return connection
+    def step_axis(self, value: float, direction: str):
+        logger.info(f"Step {direction} by {value}")
+        try:
+            if direction == "up":
+                self.axis.stepu(value)
+            elif direction == "down":
+                self.axis.stepd(value)
+            else:
+                logger.warning(f"Invalid direction {direction}")
+        except Exception as e:
+            logger.warning(f"Error stepping axis: {e}")
 
     def activate(self):
         for widget in self.findChildren(QWidget):
@@ -190,27 +209,22 @@ class OpenLoopWidget(QFrame):
 
         self.control_bar.power_button.setText(self.axis.status)
 
-        self.voltage_widget.set_button.clicked.connect(
-            self.connect_to_axis(self.voltage_widget, "voltage")
+        self.voltage_widget.onValueChanged.connect(
+            lambda value: setattr(self.axis, "voltage", value)
         )
-        self.frequency_widget.set_button.clicked.connect(
-            self.connect_to_axis(self.frequency_widget, "frequency")
+        self.frequency_widget.onValueChanged.connect(
+            lambda value: setattr(self.axis, "frequency", value)
         )
-        self.offset_widget.set_button.clicked.connect(
-            self.connect_to_axis(self.offset_widget, "offset")
+
+        self.offset_widget.onValueChanged.connect(
+            lambda value: setattr(self.axis, "offset_voltage", value)
         )
-        self.step_widget.minus_button.clicked.connect(
-            self.connect_to_axis(self.step_widget, "step")
-        )
-        self.step_widget.plus_button.clicked.connect(
-            self.connect_to_axis(self.step_widget, "step")
-        )
-        self.cmover_button.pressed.connect(
-            self.connect_to_axis(self.step_widget, "step")
-        )
-        self.cmovel_button.released.connect(
-            self.connect_to_axis(self.step_widget, "step")
-        )
+        self.step_widget.onValueChanged.connect(self.step_axis)
+
+        self.cmover_button.pressed.connect(lambda x: self.step_axis(1, "up"))
+        # self.cmovel_button.released.connect(
+        #     self.connect_to_axis(self.step_widget, "step")
+        # )
 
     def deactivate(self):
         for widget in self.findChildren(QWidget):
