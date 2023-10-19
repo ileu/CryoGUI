@@ -3,7 +3,7 @@ import sys
 import time
 
 from PyQt6 import QtCore
-from PyQt6.QtCore import QTimer, QThread
+from PyQt6.QtCore import QTimer, QThread, pyqtSignal
 from PyQt6.QtGui import QIntValidator
 from PyQt6.QtSerialPort import QSerialPortInfo
 from PyQt6.QtWidgets import (
@@ -25,9 +25,19 @@ from src.controller.dummies import DummyAttoDRY
 # from src.AttoDRY import AttoDRY, Cryostats
 
 
-class ConnectionManager(QThread):
-    def __init__(self):
+class Messager(QThread):
+    finished = pyqtSignal()
+    failed = pyqtSignal()
+
+    def __init__(self, device, message):
+        super().__init__()
+        self.device = device
+        self.message = message
+
+    def run(self):
         pass
+        # try:
+        # self.device
 
 
 class LoggerInterface(QMainWindow):
@@ -69,12 +79,24 @@ class LoggerInterface(QMainWindow):
         self.logging_timer.timeout.connect(self.log)
 
         self.logging_interval_edit = QLineEdit("1000")
+        self.logging_interval_edit.setToolTip("Needs to be bigger than 100ms")
         self.logging_interval_edit.editingFinished.connect(
             lambda: self.logging_timer.setInterval(
                 int(self.logging_interval_edit.text())
             )
         )
-        self.logging_interval_edit.setValidator(QIntValidator(bottom=100))
+        self.logging_interval_edit.inputRejected.connect(
+            lambda: print("rejected", self.logging_interval_edit.hasAcceptableInput())
+        )
+        self.logging_interval_edit.sele
+        self.logging_interval_edit.setValidator(QIntValidator(bottom=500))
+        self.logging_interval_edit.editingFinished.connect(
+            lambda: self.logging_interval_edit.setStyleSheet(
+                "background-color: red"
+                if int(self.logging_interval_edit.text()) < 100
+                else "background-color: white"
+            )
+        )
         self.logging_interval_edit.setEnabled(False)
         self.layout.addWidget(self.logging_interval_edit, 2, 2)
         self.layout.addWidget(QLabel("Logging Interval (ms)"), 2, 1)
