@@ -76,11 +76,12 @@ class StepMeasurement(QObject):
         # setup
         logger.info("Starting loop")
         try:
-            for voltage in range(
-                starting_voltage,
-                end_voltage,
-                delta_voltage,
+            for frequency in range(
+                190,
+                200,
+                20,
             ):
+                voltage = 20
                 rep = 0
                 # for rep, voltage in enumerate([starting_voltage] * 10):
                 if not self.running:
@@ -88,13 +89,14 @@ class StepMeasurement(QObject):
                     break
                 logger.info(f"setting voltage to {voltage}")
                 axis.voltage = voltage
+                axis.frequency = frequency
                 # anc300.read()
                 logger.debug(f"waiting for 1 seconds")
                 time.sleep(1)
 
                 date = datetime.datetime.now().strftime("%Y%m%d")
                 filename = (
-                    save_path + rf"\{date}_voltage-{voltage}_repetion-{rep+1}_.csv"
+                    save_path + rf"\{date}_voltage-{voltage}_frequency-{frequency}_.csv"
                 )
                 while os.path.exists(filename):
                     if filename.split("_")[-2].isdigit():
@@ -120,13 +122,22 @@ class StepMeasurement(QObject):
                         axis.stepu = 1
                     else:
                         axis.stepd = 1
+                    logger.debug(f"waiting for {2.0 / frequency} seconds")
+                    time.sleep(0.1)
                     i += 1
-                    time.sleep(2 / axis.frequency)
-                    logger.debug(f"measuring power")
-                    for n in range(power_avg):
-                        powers[n] = pm.power_W
-                        time.sleep(0.05)
-                    power = np.average(powers)
+                    if direction == 1:
+                        logger.debug(f"measuring power")
+                        for n in range(power_avg):
+                            try:
+                                powers[n] = pm.power_W
+                                time.sleep(0.1)
+                            except Exception as e:
+                                logger.error(f"Error: {e}")
+                                powers[n] = np.nan
+                    else:
+                        powers = np.array([pm.power_W] * power_avg)
+                        logger.debug("Backwards power measurement")
+                    power = np.nanmean(powers)
                     logger.debug(f"power is {power}")
 
                     storage.append(power)
@@ -148,8 +159,7 @@ class StepMeasurement(QObject):
                             "a",
                         ) as f:
                             f.write(f"{i}, step, {power}, watt, {peak}\n")
-
-                    time.sleep(0.1)
+                            f.flush()
 
                     if peak and power < 1e-8:
                         # logger.info("stepped over peak")
