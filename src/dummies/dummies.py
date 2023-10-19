@@ -1,56 +1,12 @@
-import time
 from datetime import datetime
-from typing import List
 
-from src.controller import AMC300Controller
-from src.controller._quantities import PositionQty
-from src.controller.dummycontroller import DummyController
-from src.controller.axis import Axis
+import logging
+
+logger = logging.getLogger(__name__)
 
 
-class DummyAMC300Controller(AMC300Controller):
-    def __init__(self, ip):
-        super().__init__(ip)
-        self.ip = ip
-
-        self.axes: List[DummyOpenLoopAxis] = []
-
-        self._position = 0
-
-    def connect(self):
-        for i in range(3):
-            self.axes.append(DummyOpenLoopAxis(i))
-        return True
-
-    def disconnect(self):
-        return True
-
-
-class DummyAttoDRY(DummyController):
-    def __init__(self):
-        super().__init__()
-        self.started = False
-        self.connected = False
-        self.com_port = None
-
-    def begin(self):
-        self.started = True
-
-    def end(self):
-        self.started = False
-
-    def Connect(self, com_port):
-        self.connected = True
-        self.com_port = com_port
-
-    def Disconnect(self):
-        self.connected = False
-        self.com_port = None
-
-
-class DummyOpenLoopAxis(Axis):
+class DummyOpenLoopAxis:
     def __init__(self, index):
-        super().__init__(index, None)
         self._position = 0
         self._target_position = 0
         self.start_time = datetime.now()
@@ -88,11 +44,8 @@ class DummyOpenLoopAxis(Axis):
             self._position = self._target_position
         else:
             self._position += (
-                    elapsed_time / 3 * (self._target_position - self._position))
-
-    def check_moving_axis(self):
-        if self._move() - self.position_m < 1e-6:
-            self.set_status_axis(False)
+                elapsed_time / 3 * (self._target_position - self._position)
+            )
 
     def set_axis_control_move(self, b):
         print("set axis control move", b)
@@ -119,5 +72,26 @@ class DummyOpenLoopAxis(Axis):
     def get_status_axis(self):
         return self.grounded
 
-    def get_target_position(self):
-        return self._target_position
+
+class DummyClosedLoopAxis:
+    def __init__(
+        self,
+        voltage: float = 0,
+        frequency: float = 0,
+        offset: float = 0,
+        step: float = 0,
+        status: str = "GND",
+    ):
+        self.voltage = voltage
+        self.frequency = frequency
+        self.offset = offset
+        self.step = step
+        self.status = status
+
+    def __getattr__(self, item):
+        logger.info(f"get {item}")
+        return super().__getattribute__(item)
+
+    def __setattr__(self, key, value):
+        logger.info(f"set {key}: {value}")
+        super().__setattr__(key, value)

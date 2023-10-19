@@ -1,22 +1,19 @@
 import typing
-from abc import abstractmethod
+from abc import abstractmethod, ABC
 
+from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import QWidget
 from PyQt6.uic.properties import QtGui
 
 
 class InstrumentWidget(QWidget):
+    statusUpdated = pyqtSignal(str)
+    connectionChanged = pyqtSignal(bool)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         self.status = ""
-
-        self.is_refresh_thread_running = False
-        self.refresh_thread = None
-
-        self.is_action_thread_running = False
-        self.action_thread = None
 
         self.is_connected = False
 

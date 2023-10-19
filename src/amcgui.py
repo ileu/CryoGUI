@@ -3,10 +3,10 @@ import threading
 import time
 from typing import List
 
+from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtGui import QAction
 from PyQt6.QtWidgets import (
     QApplication,
-    QMainWindow,
     QVBoxLayout,
     QWidget,
     QInputDialog,
@@ -16,10 +16,12 @@ from src.view import ClosedLoopWidget
 # from controller import AMC300Controller
 
 
-from controller.dummies import DummyAMC300Controller as AMC300Controller
+from src.dummies.dummycontroller import DummyAMC300Controller as AMC300Controller
 
 
-class GUI(QMainWindow):
+class GUI(QWidget):
+    statusUpdated = pyqtSignal(str)
+
     def __init__(self):
         super().__init__()
         self.ip_address = None

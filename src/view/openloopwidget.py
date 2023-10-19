@@ -1,9 +1,8 @@
 import os
 import time
 
-from PyQt6 import QtCore
 from PyQt6.QtCore import Qt, QThread
-from PyQt6.QtGui import QPixmap, QIcon
+from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import (
     QWidget,
     QPushButton,
@@ -16,6 +15,7 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import pyqtSignal
 from pymeasure.instruments.attocube.anc300 import Axis
 
+from src.dummies.dummies import DummyClosedLoopAxis
 from src.view.utilitywidgets import (
     SetWidget,
     IncrementWidget,
@@ -51,31 +51,9 @@ class Mover(QThread):
         self.terminate()
 
 
-class DummyClosedLoopAxis:
-    def __init__(
-        self,
-        voltage: float = 0,
-        frequency: float = 0,
-        offset: float = 0,
-        step: float = 0,
-        status: str = "GND",
-    ):
-        self.voltage = voltage
-        self.frequency = frequency
-        self.offset = offset
-        self.step = step
-        self.status = status
-
-    def __getattr__(self, item):
-        logger.info(f"get {item}")
-        return super().__getattribute__(item)
-
-    def __setattr__(self, key, value):
-        logger.info(f"set {key}: {value}")
-        super().__setattr__(key, value)
-
-
 class OpenLoopWidget(QFrame):
+    statusUpdated = pyqtSignal(str)
+
     def __init__(
         self,
         parent: QWidget = None,
@@ -88,7 +66,9 @@ class OpenLoopWidget(QFrame):
         self.control_bar = ControlBar()
 
         self.control_bar.title_label.setText(title)
-        self.control_bar.status_label.setText("Status: Disconnected")
+
+        self.statusUpdated.connect(self.control_bar.status_label.setText)
+        self.statusUpdated.emit("Disconnected")
 
         self.voltage_widget = SetWidget(title="Voltage", symbols=8, unit="V")
         self.frequency_widget = SetWidget(title="Frequency", symbols=8, unit="Hz")
@@ -178,7 +158,6 @@ class OpenLoopWidget(QFrame):
 
     def update_locked_button(self):
         path = os.path.join(os.path.dirname(__file__), r"..\icons")
-        print(path)
         if self.locked_optimize:
             self.lock_button.setIcon(QIcon(path + r"\lock.png"))
         else:
@@ -223,10 +202,10 @@ class OpenLoopWidget(QFrame):
         )
         self.step_widget.onValueChanged.connect(self.step_axis)
 
-        self.cmover_button.pressed.connect(lambda x: self.step_axis(1, "up"))
-        # self.cmovel_button.released.connect(
-        #     self.connect_to_axis(self.step_widget, "step")
-        # )
+        self.cmover_button.pressed.connect(lambda: self.step_axis(1, "up"))
+        self.cmover_button.released.connect(lambda: self.step_axis(0, "up"))
+        self.cmovel_button.pressed.connect(lambda: self.step_axis(1, "down"))
+        self.cmovel_button.released.connect(lambda: self.step_axis(0, "down"))
 
     def deactivate(self):
         for widget in self.findChildren(QWidget):

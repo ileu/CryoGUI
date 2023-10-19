@@ -3,6 +3,7 @@ import threading
 import time
 from typing import List
 
+from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtGui import QAction
 from PyQt6.QtWidgets import (
     QApplication,
@@ -12,6 +13,7 @@ from PyQt6.QtWidgets import (
     QInputDialog,
     QLabel,
     QFrame,
+    QPushButton,
 )
 from src.view import OpenLoopWidget
 
@@ -29,6 +31,11 @@ class ANCGUI(InstrumentWidget):
         mainLayout = QVBoxLayout()
         mainLayout.setSpacing(0)
         self.status_label = QLabel("Disconnected")
+        self.statusUpdated.connect(self.status_label.setText)
+
+        self.connect_button = QPushButton("Connect", self)
+        self.connect_button.clicked.connect(self.connect_instrument)
+        mainLayout.addWidget(self.connect_button)
 
         self.axis = ["LX", "LY", "LZ", "RX", "RY", "RZ"]
         self.axis_widgets = {}
@@ -43,11 +50,8 @@ class ANCGUI(InstrumentWidget):
         self.setLayout(mainLayout)
 
     def refresh(self):
-        while self.is_refresh_thread_running:
-            for ax_wid in self.axis_widgets.values():
-                ax_wid.update()
-
-            time.sleep(0.1)
+        for ax_wid in self.axis_widgets.values():
+            ax_wid.update()
 
     def execute(self):
         pass
@@ -64,16 +68,13 @@ class ANCGUI(InstrumentWidget):
                 None  # ANC300Controller(adapter=address, axisnames=axis, passwd=passwd)
             )
         except:
-            self.status = "Connection failed"
+            self.statusUpdated.emit("Connection failed")
             return False
 
         self.is_connected = True
         self.ancController = ancController
-
-        # self.is_refresh_thread_running = True
-        # self.refresh_thread = threading.Thread(target=self.refresh())
-        # self.refresh_thread.start()
-
+        self.statusUpdated.emit("Connected")
+        self.activate_widgets()
         return True
 
     def disconnect_instrument(self) -> bool:
@@ -83,7 +84,6 @@ class ANCGUI(InstrumentWidget):
 def main():
     app = QApplication(sys.argv)
     gui = ANCGUI()
-    gui.connect_instrument("1234")
     gui.show()
     sys.exit(app.exec())
 

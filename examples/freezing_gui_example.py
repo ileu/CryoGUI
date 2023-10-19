@@ -16,6 +16,7 @@ from PyQt6.QtCore import QObject, pyqtSignal, QThread
 # example taken from https://realpython.com/python-pyqt-qthread/#freezing-a-gui-with-long-running-tasks
 
 
+# Step 1: Create a worker class
 class Worker(QObject):
     finished = pyqtSignal()
     progress = pyqtSignal(int)

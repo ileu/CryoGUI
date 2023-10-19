@@ -8,12 +8,13 @@ from PyQt6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QLineEdit,
-    QPushButton, QStyle,
+    QPushButton,
+    QStyle,
 )
 from PyQt6.QtCore import Qt
 
 from src.controller.axis import Axis
-from src.controller.dummies import DummyOpenLoopAxis
+from src.dummies.dummies import DummyOpenLoopAxis
 
 
 class ClosedLoopWidget(QWidget):
@@ -115,7 +116,9 @@ class ClosedLoopWidget(QWidget):
         self.set_button.clicked.connect(self.set_value)
 
         self.move_button.setCheckable(True)
-        self.move_button.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_MediaPlay))
+        self.move_button.setIcon(
+            self.style().standardIcon(QStyle.StandardPixmap.SP_MediaPlay)
+        )
         self.move_button.setFixedSize(30, 20)
         self.move_button.setStyleSheet(
             "QPushButton {border: 2px solid black; padding-bottom: 0px; "
@@ -274,9 +277,13 @@ class ClosedLoopWidget(QWidget):
     def updateMovableButton(self):
         self.move_button.setChecked(self.movable)
         if self.movable:
-            self.move_button.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_MediaStop))
+            self.move_button.setIcon(
+                self.style().standardIcon(QStyle.StandardPixmap.SP_MediaStop)
+            )
         else:
-            self.move_button.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_MediaPlay))
+            self.move_button.setIcon(
+                self.style().standardIcon(QStyle.StandardPixmap.SP_MediaPlay)
+            )
 
     def update(self):
         super().update()

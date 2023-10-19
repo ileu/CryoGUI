@@ -1,8 +1,6 @@
 import os
 import sys
-import time
 
-from PyQt6 import QtCore
 from PyQt6.QtCore import QTimer, QThread, pyqtSignal
 from PyQt6.QtGui import QIntValidator
 from PyQt6.QtSerialPort import QSerialPortInfo
@@ -19,13 +17,13 @@ from PyQt6.QtWidgets import (
     QLineEdit,
 )
 
-from src.controller.dummies import DummyAttoDRY
+from src.dummies.dummycontroller import DummyAttoDRY
 
 
 # from src.AttoDRY import AttoDRY, Cryostats
 
 
-class Messager(QThread):
+class Messenger(QThread):
     finished = pyqtSignal()
     failed = pyqtSignal()
 

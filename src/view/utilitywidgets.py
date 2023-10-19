@@ -37,7 +37,9 @@ line_edit_style_large = (
 class IncrementWidget(QWidget):
     onValueChanged = QtCore.pyqtSignal(float, str)
 
-    def __init__(self, parent: QWidget = None, title: str = "TEST", unit: str = "", **kwargs):
+    def __init__(
+        self, parent: QWidget = None, title: str = "TEST", unit: str = "", **kwargs
+    ):
         super().__init__(parent, **kwargs)
         self.value = 0.0
 
@@ -246,9 +248,10 @@ class ControlBar(QWidget):
 
         self.setLayout(main_layout)
 
-    def toggle_moveable(self):
-        self.movable = not self.movable
-        if self.movable:
+    @QtCore.pyqtSlot(bool)
+    def toggle_moveable(self, movable):
+        self.movable = movable
+        if movable:
             self.move_button.setIcon(
                 self.style().standardIcon(QStyle.StandardPixmap.SP_MediaPause)
             )
@@ -266,13 +269,7 @@ class ControlBar(QWidget):
             self.power_button.setText("OFF")
 
 
-def connect_button_to_axis(
-        widget,
-        button,
-        actions,
-        axis,
-        property
-):
+def connect_button_to_axis(widget, button, actions, axis, property):
     def connection():
         try:
             widget.value = float(widget.input.text())
