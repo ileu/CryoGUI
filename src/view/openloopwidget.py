@@ -1,7 +1,7 @@
 import os
 import time
 
-from PyQt6.QtCore import Qt, QThread
+from PyQt6.QtCore import Qt, QThread, pyqtSlot
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import (
     QWidget,
@@ -84,7 +84,11 @@ class OpenLoopWidget(QFrame):
 
         self.grounded = False
         self.movable = False
-        self.locked_optimize = lock_optimize_on_start
+
+        self.lock_button.clicked.connect(self.optimize_button.setEnabled)
+        self.lock_button.setChecked(lock_optimize_on_start)
+
+        self.lock_path = os.path.join(os.path.dirname(__file__), r"..\icons")
 
         self.initUI()
 
@@ -105,9 +109,7 @@ class OpenLoopWidget(QFrame):
         self.lock_button.setStyleSheet(push_button_style)
         self.lock_button.setFixedSize(30, 30)
         self.lock_button.setCheckable(True)
-        self.lock_button.toggled.connect(self.change_optimize_lock)
-
-        self.update_locked_button()
+        self.lock_button.toggled.connect(self.on_lock_toggled)
 
         self.cmover_button.setStyleSheet(push_button_style)
         self.cmover_button.setFixedSize(40, 20)
@@ -151,18 +153,12 @@ class OpenLoopWidget(QFrame):
 
         self.setLayout(main_layout)
 
-    def change_optimize_lock(self):
-        logger.info(f"Lock optimize: {self.locked_optimize}")
-        self.locked_optimize = not self.locked_optimize
-        self.update_locked_button()
-
-    def update_locked_button(self):
-        path = os.path.join(os.path.dirname(__file__), r"..\icons")
-        if self.locked_optimize:
-            self.lock_button.setIcon(QIcon(path + r"\lock.png"))
+    @pyqtSlot(bool)
+    def on_lock_toggled(self, toggle):
+        if toggle:
+            self.lock_button.setIcon(QIcon(self.lock_path + r"\lock.png"))
         else:
-            self.lock_button.setIcon(QIcon(path + r"\unlock.png"))
-        self.optimize_button.setEnabled(not self.locked_optimize)
+            self.lock_button.setIcon(QIcon(self.lock_path + r"\unlock.png"))
 
     def refresh_values(self):
         pass
@@ -181,26 +177,26 @@ class OpenLoopWidget(QFrame):
 
     def activate(self):
         for widget in self.findChildren(QWidget):
-            if widget == self.optimize_button:
-                self.optimize_button.setEnabled(not self.locked_optimize)
-                logger.debug(f"Special enabling {widget}")
-                continue
+            # if widget == self.optimize_button:
+            #     self.optimize_button.setEnabled(not self.locked_optimize)
+            #     logger.debug(f"Special enabling {widget}")
+            #     continue
             logger.debug(f"Enabling {widget}")
             widget.setEnabled(True)
 
         self.control_bar.mode_button.setText(self.axis.status)
 
-        self.voltage_widget.onValueChanged.connect(
+        self.voltage_widget.valueChanged.connect(
             lambda value: setattr(self.axis, "voltage", value)
         )
-        self.frequency_widget.onValueChanged.connect(
+        self.frequency_widget.valueChanged.connect(
             lambda value: setattr(self.axis, "frequency", value)
         )
 
-        self.offset_widget.onValueChanged.connect(
+        self.offset_widget.valueChanged.connect(
             lambda value: setattr(self.axis, "offset_voltage", value)
         )
-        self.step_widget.onValueChanged.connect(self.step_axis)
+        self.step_widget.valueChanged.connect(self.step_axis)
 
         self.cmover_button.pressed.connect(lambda: self.step_axis(1, "up"))
         self.cmover_button.released.connect(lambda: self.step_axis(0, "up"))
@@ -220,7 +216,7 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     app = QApplication([])
     # olw = OpenLoopWidget(axis=DummyAxis(), title="Test", lock_optimize_on_start=False)
-    olw = OpenLoopWidget(axis=DummyClosedLoopAxis())
-    olw.activate()
+    olw = OpenLoopWidget(axis=DummyClosedLoopAxis(), lock_optimize_on_start=False)
+    olw.deactivate()
     olw.show()
     app.exec()
