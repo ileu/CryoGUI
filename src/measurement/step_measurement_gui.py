@@ -1,8 +1,10 @@
 import datetime
 import os
 import sys
-import random
-from PyQt6.QtCore import Qt, QTimer, QThread, pyqtSlot
+import logging
+
+import matplotlib
+from PyQt6.QtCore import QThread, pyqtSlot
 from PyQt6.QtWidgets import (
     QApplication,
     QMainWindow,
@@ -13,15 +15,12 @@ from PyQt6.QtWidgets import (
 )
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
-import matplotlib
 from onglabsuite.instruments.thorlabs.pm100d import PM100D
 from pymeasure.instruments.attocube import ANC300Controller
 
 from src.measurement.step_measurement import StepMeasurement
 
 matplotlib.use("QtAgg")
-
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -34,15 +33,15 @@ class QTextEditHandler(logging.Handler):
     def emit(self, record):
         log_message = self.format(record)
         if record.levelname == "DEBUG":
-            self.text_widget.append(f"<font color=blue>{log_message}</font>")
+            self.text_widget.append(f"<font color=grey>{log_message}</font>")
         elif record.levelname == "INFO":
-            self.text_widget.append(f"<font color=green>{log_message}</font>")
+            self.text_widget.append(f"<font color=#555555>{log_message}</font>")
         elif record.levelname == "WARNING":
-            self.text_widget.append(f"<font color=orange>{log_message}</font>")
+            self.text_widget.append(f"<font color=#F1C40F>{log_message}</font>")
         elif record.levelname == "ERROR":
             self.text_widget.append(f"<font color=red>{log_message}</font>")
         elif record.levelname == "CRITICAL":
-            self.text_widget.append(f"<font color=darkred>{log_message}</font>")
+            self.text_widget.append(f"<font color=darkred><b>{log_message}</b></font>")
         else:
             self.text_widget.append(log_message)
 
@@ -73,6 +72,7 @@ class MeasurementApp(QMainWindow):
         self.log_text = QTextEdit(self)
         self.log_text.setReadOnly(True)
         self.log_text.ensureCursorVisible()
+        # self.log_text.setStyleSheet("background-color: #555555")
         self.log_text.verticalScrollBar().rangeChanged.connect(self.change_scroll)
         self.layout.addWidget(self.log_text)
 
@@ -81,6 +81,7 @@ class MeasurementApp(QMainWindow):
         self.thread: QThread = None
         self.experiment: StepMeasurement = None
         self.data = []
+
         # self.timer = QTimer(self)
         # self.timer.timeout.connect(self.update_plot)
 
