@@ -15,6 +15,8 @@ from PyQt6.QtWidgets import (
     QFrame,
     QPushButton,
 )
+
+from src.dummies.dummycontroller import DummyANC300Controller
 from src.view import OpenLoopWidget
 
 from pymeasure.instruments.attocube import ANC300Controller
@@ -63,10 +65,12 @@ class ANCGUI(InstrumentWidget):
             axis = self.axis
 
         try:
-            pass
-            ancController: ANC300Controller = (
-                None  # ANC300Controller(adapter=address, axisnames=axis, passwd=passwd)
+            ancController = DummyANC300Controller(
+                adapter=address, axisnames=axis, passwd=passwd
             )
+            # ancController: ANC300Controller = ANC300Controller(
+            #     adapter=address, axisnames=axis, passwd=passwd
+            # )
         except:
             self.statusUpdated.emit("Connection failed")
             return False

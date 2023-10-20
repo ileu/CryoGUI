@@ -86,11 +86,12 @@ class OpenLoopWidget(QFrame):
         self.movable = False
 
         self.lock_button.clicked.connect(self.optimize_button.setEnabled)
-        self.lock_button.setChecked(lock_optimize_on_start)
 
         self.lock_path = os.path.join(os.path.dirname(__file__), r"..\icons")
 
         self.initUI()
+
+        self.lock_button.setChecked(not lock_optimize_on_start)
 
         if axis is None:
             self.axis: Axis = None

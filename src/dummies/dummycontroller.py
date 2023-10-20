@@ -1,4 +1,9 @@
 import logging
+from typing import List
+
+from pymeasure.instruments.attocube import ANC300Controller
+
+from src.dummies.dummies import DummyOpenLoopAxis
 
 logger = logging.getLogger(__name__)
 
@@ -20,22 +25,40 @@ class DummyController:
         super().__setattr__(key, value)
 
 
-# class DummyAMC300Controller(AMC300Controller):
-#     def __init__(self, ip):
-#         super().__init__(ip)
-#         self.ip = ip
-#
-#         self.axes: List[DummyOpenLoopAxis] = []
-#
-#         self._position = 0
-#
-#     def connect(self):
-#         for i in range(3):
-#             self.axes.append(DummyOpenLoopAxis(i))
-#         return True
-#
-#     def disconnect(self):
-#         return True
+class DummyANC300Controller(DummyController):
+    def __init__(self, adapter, axisnames, passwd):
+        super().__init__()
+        self.adapter = adapter
+        self.axisnames = axisnames
+        self.passwd = passwd
+
+        self._position = 0
+
+    def connect(self):
+        for name in self.axisnames:
+            self.setattr(name, DummyOpenLoopAxis(name))
+        return True
+
+    def disconnect(self):
+        return True
+
+
+class DummyAMC300Controller(DummyController):
+    def __init__(self, ip):
+        super().__init__()
+        self.ip = ip
+
+        self.axes: List[DummyOpenLoopAxis] = []
+
+        self._position = 0
+
+    def connect(self):
+        for i in range(3):
+            self.axes.append(DummyOpenLoopAxis(i))
+        return True
+
+    def disconnect(self):
+        return True
 
 
 class DummyAttoDRY(DummyController):
