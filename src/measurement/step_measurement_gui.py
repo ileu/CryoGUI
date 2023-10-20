@@ -33,7 +33,18 @@ class QTextEditHandler(logging.Handler):
 
     def emit(self, record):
         log_message = self.format(record)
-        self.text_widget.append(log_message)
+        if record.levelname == "DEBUG":
+            self.text_widget.append(f"<font color=blue>{log_message}</font>")
+        elif record.levelname == "INFO":
+            self.text_widget.append(f"<font color=green>{log_message}</font>")
+        elif record.levelname == "WARNING":
+            self.text_widget.append(f"<font color=orange>{log_message}</font>")
+        elif record.levelname == "ERROR":
+            self.text_widget.append(f"<font color=red>{log_message}</font>")
+        elif record.levelname == "CRITICAL":
+            self.text_widget.append(f"<font color=darkred>{log_message}</font>")
+        else:
+            self.text_widget.append(log_message)
 
 
 class MeasurementApp(QMainWindow):
@@ -153,13 +164,6 @@ def main():
     app = QApplication(sys.argv)
     window = MeasurementApp()
 
-    log_handler = QTextEditHandler(window.log_text)
-    formatter = logging.Formatter(
-        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    )
-    log_handler.setFormatter(formatter)
-    log_handler.setLevel(logging.INFO)
-
     date = datetime.datetime.now().strftime("%Y%m%d")
     filename = rf"C:\Users\ONG_C54_01\Documents\MeasurementData\Ueli\StepMeasurement\log\{date}_step_measurement_.log"
     while os.path.exists(filename):
@@ -169,12 +173,20 @@ def main():
         else:
             filename = filename[:-4] + f"0_.log"
     print(f"Log file location is {filename}")
+    formatter = logging.Formatter(
+        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    )
+
     file_handler = logging.FileHandler(filename)
     file_handler.setFormatter(formatter)
     file_handler.setLevel(logging.DEBUG)
 
+    window_handler = QTextEditHandler(window.log_text)
+    window_handler.setFormatter(formatter)
+    window_handler.setLevel(logging.INFO)
+
     main_logger = logging.getLogger()
-    main_logger.addHandler(log_handler)
+    main_logger.addHandler(window_handler)
     main_logger.addHandler(file_handler)
     main_logger.setLevel(logging.DEBUG)
 

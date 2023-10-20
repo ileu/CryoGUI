@@ -188,7 +188,7 @@ class OpenLoopWidget(QFrame):
             logger.debug(f"Enabling {widget}")
             widget.setEnabled(True)
 
-        self.control_bar.power_button.setText(self.axis.status)
+        self.control_bar.mode_button.setText(self.axis.status)
 
         self.voltage_widget.onValueChanged.connect(
             lambda value: setattr(self.axis, "voltage", value)

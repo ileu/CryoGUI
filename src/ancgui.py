@@ -41,9 +41,9 @@ class ANCGUI(InstrumentWidget):
         self.axis_widgets = {}
 
         for axi in self.axis:
-            ax_widget = OpenLoopWidget(title=axi)
+            ax_widget = OpenLoopWidget(title=axi, lock_optimize_on_start="Z" in axi)
             self.axis_widgets[axi] = ax_widget
-            ax_widget.deactivate()
+            # ax_widget.deactivate()
             mainLayout.addWidget(ax_widget)
 
         mainLayout.addWidget(self.status_label)

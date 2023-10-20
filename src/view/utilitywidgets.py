@@ -2,7 +2,7 @@ import sys
 from typing import Callable
 
 from PyQt6 import QtCore
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QDoubleValidator
 from PyQt6.QtWidgets import (
     QWidget,
@@ -188,30 +188,51 @@ class SetWidget(QWidget):
 
 
 class ControlBar(QWidget):
+    modeChanged = pyqtSignal(str)
+
     def __init__(self, title="Title"):
         super().__init__()
 
         self.title_label = QLabel(title)
         self.status_label = QLabel("Status: Disconnected")
 
-        self.power_button = QPushButton("OFF")
+        self.off_mode = "OFF"
+        self.on_mode = "ON"
 
-        self.move_button = QPushButton()
+        self.mode_button = QPushButton(self.off_mode)
+        self.modeChanged.connect(self.mode_button.setText)
 
-        self.capacity_button = QLabel("Cap: NaN")
+        self.active_button = QPushButton()
 
-        self.powered = False
+        self.capacity_button = QPushButton("Cap: NaN")
+
         self.movable = False
+        self._mode = self.off_mode
 
         self.initUI()
 
+    def toggle_mode(self, status):
+        if status:
+            self.mode = self.on_mode
+        else:
+            self.mode = self.off_mode
+
+    @property
+    def mode(self):
+        return self._mode
+
+    @mode.setter
+    def mode(self, value):
+        self.modeChanged.emit(value)
+        self._mode = value
+
     def initUI(self):
-        self.move_button.setCheckable(True)
-        self.move_button.setIcon(
+        self.active_button.setCheckable(True)
+        self.active_button.setIcon(
             self.style().standardIcon(QStyle.StandardPixmap.SP_MediaPlay)
         )
-        self.move_button.setFixedSize(30, 20)
-        self.move_button.setStyleSheet(
+        self.active_button.setFixedSize(30, 20)
+        self.active_button.setStyleSheet(
             "QPushButton {border: 2px solid black; padding-bottom: 0px; "
             "border-radius: 5px; font-size: 16px;"
             "background-color: rgb(255,75,50);}"
@@ -220,10 +241,10 @@ class ControlBar(QWidget):
             "QPushButton:checked {background-color: rgb(0,255,0); }"
             "QPushButton:disabled {background-color: rgb(200,200,200); }"
         )
-        self.move_button.clicked.connect(self.toggle_moveable)
+        self.active_button.clicked.connect(self.toggle_activation)
 
-        self.power_button.setCheckable(True)
-        self.power_button.setStyleSheet(
+        self.mode_button.setCheckable(True)
+        self.mode_button.setStyleSheet(
             "QPushButton {border: 2px solid black; padding-bottom: 2px; "
             "border-radius: 5px; font-size: 16px; font-weight: bold;"
             "background-color: rgb(180,180,255);}"
@@ -232,8 +253,13 @@ class ControlBar(QWidget):
             "QPushButton:checked {background-color: rgb(0,255,0); }"
             "QPushButton:disabled {background-color: rgb(200,200,200); }"
         )
-        self.power_button.setFixedSize(40, 20)
-        self.power_button.clicked.connect(self.toggle_power)
+        self.mode_button.setFixedSize(40, 20)
+        self.mode_button.clicked.connect(self.toggle_mode)
+
+        self.capacity_button.setStyleSheet(
+            push_button_style
+            + "QPushButton {font-size: 12px; border: 1px solid gray; padding-bottom: 0px;}"
+        )
 
         main_layout = QVBoxLayout()
         main_layout.setContentsMargins(0, 0, 0, 0)
@@ -242,31 +268,23 @@ class ControlBar(QWidget):
         text_layout.addWidget(self.capacity_button)
         text_layout.addStretch()
         text_layout.addWidget(self.status_label)
-        text_layout.addWidget(self.move_button)
-        text_layout.addWidget(self.power_button)
+        text_layout.addWidget(self.active_button)
+        text_layout.addWidget(self.mode_button)
         main_layout.addLayout(text_layout)
 
         self.setLayout(main_layout)
 
     @QtCore.pyqtSlot(bool)
-    def toggle_moveable(self, movable):
+    def toggle_activation(self, movable):
         self.movable = movable
         if movable:
-            self.move_button.setIcon(
+            self.active_button.setIcon(
                 self.style().standardIcon(QStyle.StandardPixmap.SP_MediaPause)
             )
         else:
-            self.move_button.setIcon(
+            self.active_button.setIcon(
                 self.style().standardIcon(QStyle.StandardPixmap.SP_MediaPlay)
             )
-
-    @QtCore.pyqtSlot(bool)
-    def toggle_power(self, powered):
-        self.powered = not powered
-        if powered:
-            self.power_button.setText("ON")
-        else:
-            self.power_button.setText("OFF")
 
 
 def connect_button_to_axis(widget, button, actions, axis, property):
