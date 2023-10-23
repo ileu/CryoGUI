@@ -67,7 +67,7 @@ class StepMeasurement(QObject):
         anc300.stop_all()
         anc300.ground_all()
 
-        axis: Axis = anc300.LX
+        axis: Axis = anc300.RX
 
         axis.mode = "stp"
 
@@ -76,14 +76,16 @@ class StepMeasurement(QObject):
         # setup
         logger.info("Starting loop")
         try:
-            for frequency in range(
-                190,
-                200,
-                20,
-            ):
-                voltage = 20
-                rep = 0
-                # for rep, voltage in enumerate([starting_voltage] * 10):
+            # for voltage in range(
+            #     26,
+            #     18,
+            #     -1,
+            # ):
+            for rep, voltage in enumerate([starting_voltage] * 6):
+                # voltage = 20
+                frequency = 10
+                # rep = 0
+
                 if not self.running:
                     logger.info("Measurement stopped")
                     break
@@ -96,7 +98,8 @@ class StepMeasurement(QObject):
 
                 date = datetime.datetime.now().strftime("%Y%m%d")
                 filename = (
-                    save_path + rf"\{date}_voltage-{voltage}_frequency-{frequency}_.csv"
+                    save_path
+                    + rf"\{date}_axis-RX_rep-{rep}_voltage-{voltage}_frequency-{frequency}_.csv"
                 )
                 while os.path.exists(filename):
                     if filename.split("_")[-2].isdigit():
@@ -162,20 +165,20 @@ class StepMeasurement(QObject):
                             f.flush()
 
                     if peak and power < 1e-8:
-                        # logger.info("stepped over peak")
-                        # break
-                        if direction == 1:
-                            logger.info("stepping back")
-                            direction = -1
-                            peak = False
-                            storage = []
-                            i = 0
-                        else:
-                            logger.info("finished")
-                            break
-                # logger.info(f"stepping back {i} steps")
-                # axis.stepd = i
-                # time.sleep(i / axis.frequency * 1.2)
+                        logger.info("stepped over peak")
+                        break
+                    #     if direction == 1:
+                    #         logger.info("stepping back")
+                    #         direction = -1
+                    #         peak = False
+                    #         storage = []
+                    #         i = 0
+                    #     else:
+                    #         logger.info("finished")
+                    #         break
+                logger.info(f"stepping back {i} steps")
+                axis.stepd = i
+                time.sleep(i / axis.frequency * 1.2)
                 # input("Press enter to continue")
 
         except Exception as e:

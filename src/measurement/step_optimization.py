@@ -12,7 +12,7 @@ from pymeasure.instruments.attocube.anc300 import Axis
 logger = logging.getLogger(__name__)
 
 
-class StepMeasurement(QObject):
+class OptimizationMeasurement(QObject):
     newDataPoint = pyqtSignal(float)
     measurementFinished = pyqtSignal(bool)
 
@@ -49,8 +49,9 @@ class StepMeasurement(QObject):
 
         # parameters
 
-        coarse_voltage = 22  # volt
+        coarse_voltage = 24  # volt
         fine_voltage = 20  # volt
+        frequency = 10  # Hz
         slope_stepping = 10
         max_steps = 50
         power_avg = 5
@@ -66,7 +67,7 @@ class StepMeasurement(QObject):
         anc300.stop_all()
         anc300.ground_all()
 
-        axis: Axis = anc300.LX
+        axis: Axis = anc300.RX
 
         axis.mode = "stp+"
 
@@ -76,11 +77,14 @@ class StepMeasurement(QObject):
         logger.info("Starting loop")
         try:
             powers = []
+            axis.voltage = coarse_voltage
+            axis.frequency = frequency
+
             # look if there is a slope
             logger.debug("Looking for slope")
             for i in range(slope_stepping):
                 axis.stepu = 1
-                time.sleep(0.1)
+                time.sleep(0.25)
                 try:
                     powers.append(pm.power_W)
                 except Exception as e:
@@ -89,6 +93,8 @@ class StepMeasurement(QObject):
 
             check_slope_pos = np.all(np.diff(powers) > 0)
             check_slope_neg = np.all(np.diff(powers) < 0)
+            logger.info("Powers: " + str(powers))
+            logger.info("Power diffs: " + str(np.diff(powers)))
 
             if check_slope_pos:
                 logger.info("Found positive slope")

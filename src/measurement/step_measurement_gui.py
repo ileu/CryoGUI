@@ -19,6 +19,7 @@ from onglabsuite.instruments.thorlabs.pm100d import PM100D
 from pymeasure.instruments.attocube import ANC300Controller
 
 from src.measurement.step_measurement import StepMeasurement
+from src.measurement.step_optimization import OptimizationMeasurement
 
 matplotlib.use("QtAgg")
 
@@ -107,7 +108,7 @@ class MeasurementApp(QMainWindow):
             passwd="123456",
         )
         logger.info("ANC300 connected")
-        powermeter = PM100D("USB0::0x1313::0x8078::P0021350::INSTR")
+        powermeter = PM100D("USB0::0x1313::0x8078::P0024405::INSTR")
         devices = {"anc300": controller, "pm": powermeter}
         logger.info("Powermeter connected")
         logger.info("Setup Thread")
@@ -115,7 +116,7 @@ class MeasurementApp(QMainWindow):
         self.thread = QThread()
         logger.debug("Thread created")
         # create the experiment
-        self.experiment = StepMeasurement(devices)
+        self.experiment = OptimizationMeasurement(devices)
         logger.debug("Experiment created")
         # move experiment to thread
         self.experiment.moveToThread(self.thread)
@@ -166,7 +167,7 @@ def main():
     window = MeasurementApp()
 
     date = datetime.datetime.now().strftime("%Y%m%d")
-    filename = rf"C:\Users\ONG_C54_01\Documents\MeasurementData\Ueli\StepMeasurement\log\{date}_step_measurement_.log"
+    filename = rf"C:\Users\ONG_C54_01\Documents\MeasurementData\Ueli\OptimizationMeasurement\log\{date}_step_measurement_.log"
     while os.path.exists(filename):
         if filename.split("_")[-2].isdigit():
             file_ext = int(filename.split("_")[-2]) + 1
