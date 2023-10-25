@@ -15,13 +15,16 @@ from PyQt6.QtWidgets import (
     QFrame,
     QPushButton,
 )
-
-from src.dummies.dummycontroller import DummyANC300Controller
-from src.view import OpenLoopWidget
-
+from pymeasure.instruments.attocube.anc300 import Axis
 from pymeasure.instruments.attocube import ANC300Controller
 
+from src.dummies.dummycontroller import DummyANC300Controller
 from src.view.instrumentwidget import InstrumentWidget
+from src.view import OpenLoopWidget
+
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class ANCGUI(InstrumentWidget):
@@ -69,15 +72,18 @@ class ANCGUI(InstrumentWidget):
                 adapter=address, axisnames=axis, passwd=passwd
             )
             # ancController: ANC300Controller = ANC300Controller(
-            #     adapter=address, axisnames=axis, passwd=passwd
+            #     adapter=address, axisnames=axis, passwdw=passwd
             # )
-        except:
-            self.statusUpdated.emit("Connection failed")
+        except Exception as e:
+            self.statusUpdated.emit(f"Connection failed: {e}")
             return False
 
         self.is_connected = True
         self.ancController = ancController
         self.statusUpdated.emit("Connected")
+        for axis_widget in self.axis_widgets.values():
+            axis_widget.axis = getattr(ancController, axis_widget.title)
+            axis_widget.activate()
         self.activate_widgets()
         return True
 
@@ -93,4 +99,5 @@ def main():
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
     main()

@@ -1,6 +1,7 @@
 import os
 import sys
 
+from PyQt6 import QtWidgets
 from PyQt6.QtCore import QTimer, QThread, pyqtSignal
 from PyQt6.QtGui import QIntValidator
 from PyQt6.QtSerialPort import QSerialPortInfo
@@ -16,6 +17,10 @@ from PyQt6.QtWidgets import (
     QTextEdit,
     QLineEdit,
 )
+
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.figure import Figure
+from pyqtgraph import PlotWidget
 
 from src.dummies.dummycontroller import DummyAttoDRY
 
@@ -38,6 +43,28 @@ class Messenger(QThread):
         # self.device
 
 
+class RealTimePlotCanvas(FigureCanvas):
+    def __init__(self, parent=None, width=5, height=4, dpi=100):
+        fig = Figure(figsize=(width, height), dpi=dpi)
+        self.axes = fig.add_subplot(111)
+        self.axes.set_xlabel("Time")
+        self.axes.set_ylabel("Measurement Data")
+        super().__init__(fig)
+        self.setParent(parent)
+        self.setSizePolicy(
+            QtWidgets.QSizePolicy.Policy.Expanding,
+            QtWidgets.QSizePolicy.Policy.Expanding,
+        )
+        self.updateGeometry()
+        self.line = None
+
+    def update_plot(self, data):
+        self.axes.clear()
+        self.axes.plot(data)
+        self.axes.grid(True)
+        self.draw()
+
+
 class LoggerInterface(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -51,6 +78,18 @@ class LoggerInterface(QMainWindow):
         self.attodry_controller = DummyAttoDRY()
         self.action_monitor = QTextEdit()
         self.is_connected = False
+
+        self.stage_temp_canvas = PlotWidget()
+        self.stage_temp_canvas.plot([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+
+        self.stage_pressure_canvas = PlotWidget()
+        self.stage_pressure_canvas.plot([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+
+        self.cold_temp_canvas = PlotWidget()
+        self.cold_temp_canvas.plot([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+
+        self.heater_power_canvas = PlotWidget()
+        self.heater_power_canvas.plot([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
 
         self.init_ui()
 
@@ -86,7 +125,7 @@ class LoggerInterface(QMainWindow):
         self.logging_interval_edit.inputRejected.connect(
             lambda: print("rejected", self.logging_interval_edit.hasAcceptableInput())
         )
-        self.logging_interval_edit.sele
+        # self.logging_interval_edit.sele
         self.logging_interval_edit.setValidator(QIntValidator(bottom=500))
         self.logging_interval_edit.editingFinished.connect(
             lambda: self.logging_interval_edit.setStyleSheet(
@@ -110,11 +149,16 @@ class LoggerInterface(QMainWindow):
         self.disconnect_button = QPushButton("Disconnect")
         self.disconnect_button.setEnabled(False)
         self.disconnect_button.clicked.connect(self.disconnect_controller)
+
         self.layout.addWidget(self.disconnect_button, 0, 3)
         self.layout.addWidget(self.file_locator, 1, 0, 1, 3)
         self.layout.addWidget(self.log_file_browse, 1, 3)
         self.action_monitor.setReadOnly(True)
         self.layout.addWidget(self.action_monitor, 3, 0, 1, 4)
+        self.layout.addWidget(self.stage_temp_canvas, 4, 0, 1, 4)
+        self.layout.addWidget(self.stage_pressure_canvas, 5, 0, 1, 4)
+        self.layout.addWidget(self.cold_temp_canvas, 6, 0, 1, 4)
+        self.layout.addWidget(self.heater_power_canvas, 7, 0, 1, 4)
 
     def logging_manager(self, running: bool = False):
         if not running:
@@ -172,34 +216,15 @@ class LoggerInterface(QMainWindow):
                 f"Failed to disconnect from serial port: {str(e)}"
             )
 
-    def read_and_log_data(self):
-        if self.serial_port:
-            data = self.serial_port.readline().decode("utf-8")
-            self.text_edit.append(data.strip())
-
-            if self.log_file is not None:
-                self.log_file.write(data)
-
-    def save_log(self):
-        options = QFileDialog.Options()
-        file_name, _ = QFileDialog.getSaveFileName(
-            self,
-            "Save Log File",
-            "",
-            "Text Files (*.txt);;All Files (*)",
-            options=options,
-        )
-        if file_name:
-            try:
-                self.log_file = open(file_name, "w")
-            except Exception as e:
-                self.text_edit.append(f"Failed to save log file: {str(e)}")
+    def update_plot(self, new_data_point):  # Simulate a measurement
+        self.data.append(new_data_point)
+        self.canvas.update_plot(self.data)
 
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = LoggerInterface()
     window.setWindowTitle("Logger Interface")
-    window.setGeometry(100, 100, 600, 400)
+    window.setGeometry(100, 20, 600, 800)
     window.show()
     sys.exit(app.exec())

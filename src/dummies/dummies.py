@@ -5,7 +5,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-class DummyOpenLoopAxis:
+class DummyClosedLoopAxis:
     def __init__(self, index):
         self._position = 0
         self._target_position = 0
@@ -48,7 +48,7 @@ class DummyOpenLoopAxis:
             )
 
     def set_axis_control_move(self, b):
-        print("set axis control move", b)
+        print(f"{self.index} set axis control move", b)
         start_time = datetime.now()
         if b and start_time > self.start_time:
             self.start_time = datetime.now()
@@ -58,30 +58,32 @@ class DummyOpenLoopAxis:
         return self.movable
 
     def activate_axis(self):
-        print("activate axis")
+        print(f"{self.index} activate axis")
         self.grounded = True
 
     def deactivate_axis(self):
-        print("deactivate axis")
+        print(f"{self.index} deactivate axis")
         self.grounded = False
 
     def set_status_axis(self, status):
-        print("set status axis", status)
+        print(f"{self.index} set status axis", status)
         self.grounded = status
 
     def get_status_axis(self):
         return self.grounded
 
 
-class DummyClosedLoopAxis:
+class DummyOpenLoopAxis:
     def __init__(
         self,
+        title: str = "Dummy Axis",
         voltage: float = 0,
         frequency: float = 0,
         offset: float = 0,
         step: float = 0,
         status: str = "GND",
     ):
+        self._title = title
         self.voltage = voltage
         self.frequency = frequency
         self.offset = offset
@@ -89,9 +91,13 @@ class DummyClosedLoopAxis:
         self.status = status
 
     def __getattr__(self, item):
-        logger.info(f"get {item}")
+        if item.startswith("_"):
+            return super().__getattribute__(item)
+        logger.info(f"{self._title} get {item}")
         return super().__getattribute__(item)
 
     def __setattr__(self, key, value):
-        logger.info(f"set {key}: {value}")
+        if key.startswith("_"):
+            super().__setattr__(key, value)
+        logger.info(f"{self._title} set {key}: {value}")
         super().__setattr__(key, value)

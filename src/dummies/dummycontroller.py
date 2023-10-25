@@ -32,11 +32,14 @@ class DummyANC300Controller(DummyController):
         self.axisnames = axisnames
         self.passwd = passwd
 
+        for name in self.axisnames:
+            setattr(self, name, DummyOpenLoopAxis(title=name))
+
         self._position = 0
 
     def connect(self):
         for name in self.axisnames:
-            self.setattr(name, DummyOpenLoopAxis(name))
+            self.setattr(name, DummyOpenLoopAxis(title=name))
         return True
 
     def disconnect(self):
@@ -81,3 +84,9 @@ class DummyAttoDRY(DummyController):
     def Disconnect(self):
         self.connected = False
         self.com_port = None
+
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
+    test = DummyANC300Controller("test", ["LX", "LY", "LZ"], "123456")
+    print(test.LX)

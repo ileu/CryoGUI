@@ -15,7 +15,7 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import pyqtSignal
 from pymeasure.instruments.attocube.anc300 import Axis
 
-from src.dummies.dummies import DummyClosedLoopAxis
+from src.dummies.dummies import DummyOpenLoopAxis
 from src.view.utilitywidgets import (
     SetWidget,
     IncrementWidget,
@@ -57,7 +57,7 @@ class OpenLoopWidget(QFrame):
     def __init__(
         self,
         parent: QWidget = None,
-        axis: Axis | DummyClosedLoopAxis = None,
+        axis: Axis | DummyOpenLoopAxis = None,
         title: str = "Quantity",
         lock_optimize_on_start: bool = True,
         **kwargs,
@@ -65,6 +65,7 @@ class OpenLoopWidget(QFrame):
         super().__init__(parent, **kwargs)
         self.control_bar = ControlBar()
 
+        self.title = title
         self.control_bar.title_label.setText(title)
 
         self.statusUpdated.connect(self.control_bar.status_label.setText)
@@ -91,10 +92,14 @@ class OpenLoopWidget(QFrame):
 
         self.initUI()
 
-        self.lock_button.setChecked(not lock_optimize_on_start)
+        self.on_lock_toggled(not lock_optimize_on_start)
+        if not lock_optimize_on_start:
+            self.lock_button.click()
+        # if not lock_optimize_on_start:
+        #     self.lock_button.clicked.emit(False)
 
         if axis is None:
-            self.axis: Axis = None
+            self.axis = DummyOpenLoopAxis(title=title)
             self.deactivate()
         else:
             self.axis = axis
@@ -178,10 +183,9 @@ class OpenLoopWidget(QFrame):
 
     def activate(self):
         for widget in self.findChildren(QWidget):
-            # if widget == self.optimize_button:
-            #     self.optimize_button.setEnabled(not self.locked_optimize)
-            #     logger.debug(f"Special enabling {widget}")
-            #     continue
+            if widget == self.optimize_button:
+                logger.debug(f"Special enabling {widget}")
+                continue
             logger.debug(f"Enabling {widget}")
             widget.setEnabled(True)
 
@@ -206,9 +210,9 @@ class OpenLoopWidget(QFrame):
 
     def deactivate(self):
         for widget in self.findChildren(QWidget):
-            if widget == self.optimize_button:
-                logger.debug(f"Skipping {widget}")
-                continue
+            # if widget == self.optimize_button:
+            #     logger.debug(f"Skipping {widget}")
+            #     continue
             logger.debug(f"Disabling {widget}")
             widget.setEnabled(False)
 
@@ -217,7 +221,7 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     app = QApplication([])
     # olw = OpenLoopWidget(axis=DummyAxis(), title="Test", lock_optimize_on_start=False)
-    olw = OpenLoopWidget(axis=DummyClosedLoopAxis(), lock_optimize_on_start=False)
+    olw = OpenLoopWidget(axis=DummyOpenLoopAxis(), lock_optimize_on_start=False)
     olw.deactivate()
     olw.show()
     app.exec()
