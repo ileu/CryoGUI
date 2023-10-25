@@ -4,11 +4,11 @@ import random
 import sys
 import time
 
-from PyQt6 import QtWidgets
-from PyQt6.QtCore import QTimer, QThread, pyqtSignal
-from PyQt6.QtGui import QIntValidator
-from PyQt6.QtSerialPort import QSerialPortInfo
-from PyQt6.QtWidgets import (
+from PyQt5 import QtWidgets
+from PyQt5.QtCore import QTimer, QThread, pyqtSignal
+from PyQt5.QtGui import QIntValidator
+from PyQt5.QtSerialPort import QSerialPortInfo
+from PyQt5.QtWidgets import (
     QApplication,
     QMainWindow,
     QPushButton,
@@ -23,15 +23,12 @@ from PyQt6.QtWidgets import (
     QSpacerItem,
 )
 
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.figure import Figure
 from pyqtgraph import PlotWidget
 import pyqtgraph as pg
 
-from src.dummies.dummycontroller import DummyAttoDRY
+from src.AttoDRY import AttoDRY, Cryostats
 
-
-# from src.AttoDRY import AttoDRY, Cryostats
+# from src.dummies.dummycontroller import DummyAttoDRY
 
 
 class Messenger(QThread):
@@ -58,11 +55,11 @@ class LoggerInterface(QMainWindow):
         self.serial_port = None
         self.log_file_location = None
 
-        # self.attodry_controller = AttoDRY(
-        #     setup_version=Cryostats.ATTODRY800, com_port=None
-        # )
+        self.attodry_controller = AttoDRY(
+            setup_version=Cryostats.ATTODRY800, com_port=None
+        )
 
-        self.attodry_controller = DummyAttoDRY()
+        # self.attodry_controller = DummyAttoDRY()
         self.is_connected = False
         self.action_monitor = QTextEdit()
         self.port_combo = QComboBox()
@@ -218,9 +215,9 @@ class LoggerInterface(QMainWindow):
         self.layout.addWidget(self.pushButton, 0, 5, 1, 1)
         self.pushButton_7 = QPushButton("Break Sample Valve")
         self.layout.addWidget(self.pushButton_7, 1, 8, 1, 1)
-        self.pushButton_7.clicked.connect(
-            self.attodry_controller.toggleBreakVac800Valve
-        )
+        # self.pushButton_7.clicked.connect(
+        #     self.attodry_controller.toggleBreakVac800Valve
+        # )
         self.pushButton_7.setCheckable(True)
 
         self.layout.addWidget(port_label, 0, 0)
@@ -290,13 +287,16 @@ class LoggerInterface(QMainWindow):
             # self.log_file.close()
             # self.log_file = None
 
-    def connect_controller(self, serial_port: str = None):
-        if serial_port is None:
-            serial_port = self.port_combo.currentText()
+    def connect_controller(self):
+        serial_port = str(self.port_combo.currentText())
+        self.action_monitor.append(f"Connecting to serial port {serial_port}")
+        print(serial_port)
+        print(self.port_combo.currentIndex())
+        print(self.port_combo.currentData())
         try:
             self.attodry_controller.begin()
             self.attodry_controller.Connect(serial_port)
-            # time.sleep(30)
+            time.sleep(30)
 
             for widget in self.findChildren(QWidget):
                 widget.setEnabled(True)
@@ -326,33 +326,31 @@ class LoggerInterface(QMainWindow):
         repeat = True
         while repeat:
             try:
-                # temperature = self.attodry_controller.getSampleTemperature()
-                # pressure = self.attodry_controller.getPressure800()
-                # lk_sample_temperature = self.attodry_controller.get4KStageTemperature()
-                # heat_power = self.attodry_controller.getSampleHeaterPower()
-                # turbo_pump_frequency = self.attodry_controller.GetTurbopumpFrequ800()
-                #
-                # user_temperature = self.attodry_controller.getUserTemperature()
+                temperature = self.attodry_controller.getSampleTemperature()
+                pressure = self.attodry_controller.getPressure800()
+                lk_sample_temperature = self.attodry_controller.get4KStageTemperature()
+                heat_power = self.attodry_controller.getSampleHeaterPower()
+                turbo_pump_frequency = self.attodry_controller.GetTurbopumpFrequ800()
 
-                # self.data.append(
-                #     [
-                #         temperature,
-                #         pressure,
-                #         lk_sample_temperature,
-                #         heat_power,
-                #         turbo_pump_frequency,
-                #     ]
-                # )
-
-                # self.user_temperature = user_temperature
+                user_temperature = self.attodry_controller.getUserTemperature()
 
                 data = [
-                    1 + random.random(),
-                    2 + random.random(),
-                    3 + random.random(),
-                    4 + random.random(),
-                    5 + random.random(),
+                    temperature,
+                    pressure,
+                    lk_sample_temperature,
+                    heat_power,
+                    turbo_pump_frequency,
                 ]
+
+                self.user_temperature = user_temperature
+
+                # data = [
+                #     1 + random.random(),
+                #     2 + random.random(),
+                #     3 + random.random(),
+                #     4 + random.random(),
+                #     5 + random.random(),
+                # ]
 
                 self.updatedData.emit(data)
                 repeat = False
