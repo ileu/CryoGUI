@@ -1,5 +1,8 @@
+import datetime
 import os
+import random
 import sys
+import time
 
 from PyQt6 import QtWidgets
 from PyQt6.QtCore import QTimer, QThread, pyqtSignal
@@ -46,55 +49,32 @@ class Messenger(QThread):
         # self.device
 
 
-class RealTimePlotCanvas(FigureCanvas):
-    def __init__(self, parent=None, width=5, height=4, dpi=100):
-        fig = Figure(figsize=(width, height), dpi=dpi)
-        self.axes = fig.add_subplot(111)
-        self.axes.set_xlabel("Time")
-        self.axes.set_ylabel("Measurement Data")
-        super().__init__(fig)
-        self.setParent(parent)
-        self.setSizePolicy(
-            QtWidgets.QSizePolicy.Policy.Expanding,
-            QtWidgets.QSizePolicy.Policy.Expanding,
-        )
-        self.updateGeometry()
-        self.line = None
-
-    def update_plot(self, data):
-        self.axes.clear()
-        self.axes.plot(data)
-        self.axes.grid(True)
-        self.draw()
-
-
-class ControlPanel(QWidget):
-    def __init__(self):
-        super().__init__()
-
-        self.gridLayout = QGridLayout(self)
-        self.gridLayout.setContentsMargins(0, 0, 0, 0)
-
-
 class LoggerInterface(QMainWindow):
+    updatedData = pyqtSignal(list)
+
     def __init__(self):
         super().__init__()
 
         self.serial_port = None
+        self.log_file_location = None
 
         # self.attodry_controller = AttoDRY(
         #     setup_version=Cryostats.ATTODRY800, com_port=None
         # )
 
         self.attodry_controller = DummyAttoDRY()
-        self.action_monitor = QTextEdit()
         self.is_connected = False
+        self.action_monitor = QTextEdit()
+        self.port_combo = QComboBox()
+        self.connect_button = QPushButton("Connect")
 
         self.stage_temp_canvas = PlotWidget(title="Sample Temperature")
         self.stage_pressure_canvas = PlotWidget(title="Sample Space Pressure")
         self.cold_temp_canvas = PlotWidget(title="Cold Plate Temperature")
         self.heater_power_canvas = PlotWidget(title="Heater Power")
         self.turbo_pump_canvas = PlotWidget(title="Turbo Pump Frequency")
+
+        self.user_temperature = 4
 
         self.canvases = [
             self.stage_temp_canvas,
@@ -112,21 +92,24 @@ class LoggerInterface(QMainWindow):
             "Frequency / Hz",
         ]
         self.data_titles = [
-            "Sample Temperature",
-            "Sample Space Pressure",
-            "Cold Plate Temperature",
-            "Heater Power",
-            "Turbo Pump Frequency",
+            "sample-temp_K",
+            "sample-pres_mbar",
+            "cold-plate-temp_K",
+            "heater-power_W",
+            "turbo-pump-freq_Hz",
         ]
 
-        self.data = []
+        self.data = [[] for i in range(5)]
 
         self.init_ui()
 
-        for widget in self.findChildren(QWidget):
+        for widget in self.findChildren((QPushButton, QLineEdit)):
             if widget == self.connect_button or widget == self.port_combo:
                 continue
             widget.setEnabled(False)
+
+        self.updatedData.connect(self.plot_data)
+        self.updatedData.connect(self.log_data)
 
         # self.timer = QTimer(self)
         # self.timer.timeout.connect(self.read_and_log_data)
@@ -142,13 +125,11 @@ class LoggerInterface(QMainWindow):
 
         port_label = QLabel("Port")
         ports = [port for port in QSerialPortInfo.availablePorts()]
-        self.port_combo = QComboBox()
+
         self.port_combo.addItems([port.portName() for port in ports])
 
-        self.logging_timer = QTimer(
-            self,
-        )
-        self.logging_timer.timeout.connect(self.log)
+        self.logging_timer = QTimer()
+        self.logging_timer.timeout.connect(self.get_values)
 
         self.logging_interval_edit = QLineEdit("1000")
         self.logging_interval_edit.setToolTip("Needs to be bigger than 100ms")
@@ -171,12 +152,13 @@ class LoggerInterface(QMainWindow):
         )
         self.logging_interval_edit.setEnabled(False)
 
-        self.connect_button = QPushButton("Connect")
         self.connect_button.clicked.connect(self.connect_controller)
 
         self.log_file_browse = QPushButton("Start Logging")
-        self.file_locator = QLineEdit()
         self.log_file_browse.clicked.connect(self.logging_manager)
+        self.log_file_browse.setCheckable(True)
+
+        self.file_locator = QLineEdit()
 
         self.disconnect_button = QPushButton("Disconnect")
         self.disconnect_button.setEnabled(False)
@@ -184,21 +166,6 @@ class LoggerInterface(QMainWindow):
 
         self.action_monitor.setReadOnly(True)
         # self.layout.setColumnStretch()
-
-        self.layout.addWidget(port_label, 0, 0)
-        self.layout.addWidget(self.port_combo, 0, 1)
-        self.layout.addWidget(self.connect_button, 0, 2)
-        self.layout.addWidget(self.disconnect_button, 0, 3)
-        self.layout.addWidget(self.file_locator, 1, 0, 1, 3)
-        self.layout.addWidget(self.log_file_browse, 1, 3)
-        self.layout.addWidget(QLabel("Logging Interval (ms)"), 2, 1)
-        self.layout.addWidget(self.logging_interval_edit, 2, 2)
-        self.layout.addWidget(self.stage_temp_canvas, 3, 0, 1, 4)
-        self.layout.addWidget(self.stage_pressure_canvas, 4, 0, 1, 4)
-        self.layout.addWidget(self.turbo_pump_canvas, 5, 0, 1, 4)
-        self.layout.addWidget(self.cold_temp_canvas, 3, 4, 1, 4)
-        self.layout.addWidget(self.heater_power_canvas, 4, 4, 1, 4)
-        self.layout.addWidget(self.action_monitor, 5, 4, 1, 4)
 
         self.horizontalLayout_3 = QHBoxLayout()
         spacerItem = QSpacerItem(
@@ -209,6 +176,7 @@ class LoggerInterface(QMainWindow):
         )
         self.horizontalLayout_3.addItem(spacerItem)
         self.pushButton_3 = QPushButton("Confirm")
+        self.pushButton_3.clicked.connect(self.attodry_controller.Confirm)
         self.horizontalLayout_3.addWidget(self.pushButton_3)
         spacerItem1 = QSpacerItem(
             40,
@@ -218,6 +186,7 @@ class LoggerInterface(QMainWindow):
         )
         self.horizontalLayout_3.addItem(spacerItem1)
         self.pushButton_2 = QPushButton("Cancel")
+        self.pushButton_2.clicked.connect(self.attodry_controller.Cancel)
         self.horizontalLayout_3.addWidget(self.pushButton_2)
         spacerItem2 = QSpacerItem(
             40,
@@ -240,11 +209,35 @@ class LoggerInterface(QMainWindow):
         self.horizontalLayout.addWidget(self.lineEdit_4)
         self.layout.addLayout(self.horizontalLayout, 2, 7, 1, 1)
         self.pushButton_4 = QPushButton("Heat Up")
+        self.pushButton_4.clicked.connect(self.attodry_controller.startSampleExchange)
         self.layout.addWidget(self.pushButton_4, 1, 5, 1, 1)
         self.lineEdit = QLineEdit(self)
         self.layout.addWidget(self.lineEdit, 2, 6, 1, 1)
         self.pushButton = QPushButton("Base Temperature")
+        self.pushButton.clicked.connect(self.attodry_controller.goToBaseTemperature)
         self.layout.addWidget(self.pushButton, 0, 5, 1, 1)
+        self.pushButton_7 = QPushButton("Break Sample Valve")
+        self.layout.addWidget(self.pushButton_7, 1, 8, 1, 1)
+        self.pushButton_7.clicked.connect(
+            self.attodry_controller.toggleBreakVac800Valve
+        )
+        self.pushButton_7.setCheckable(True)
+
+        self.layout.addWidget(port_label, 0, 0)
+        self.layout.addWidget(self.port_combo, 0, 1)
+        self.layout.addItem(spacerItem, 0, 2)
+        self.layout.addWidget(self.connect_button, 0, 3)
+        self.layout.addWidget(self.disconnect_button, 0, 4)
+        self.layout.addWidget(self.file_locator, 1, 0, 1, 4)
+        self.layout.addWidget(self.log_file_browse, 1, 4)
+        self.layout.addWidget(QLabel("Logging Interval (ms)"), 2, 1)
+        self.layout.addWidget(self.logging_interval_edit, 2, 2)
+        self.layout.addWidget(self.stage_temp_canvas, 3, 0, 1, 5)
+        self.layout.addWidget(self.stage_pressure_canvas, 4, 0, 1, 5)
+        self.layout.addWidget(self.turbo_pump_canvas, 5, 0, 1, 5)
+        self.layout.addWidget(self.cold_temp_canvas, 3, 5, 1, 5)
+        self.layout.addWidget(self.heater_power_canvas, 4, 5, 1, 5)
+        self.layout.addWidget(self.action_monitor, 5, 5, 1, 5)
 
         for i, plot_widget in enumerate(self.canvases):
             plot_widget.showGrid(x=True, y=True, alpha=0.5)
@@ -256,31 +249,46 @@ class LoggerInterface(QMainWindow):
             plot_widget.setXRange(0, 1)
 
     def logging_manager(self, running: bool = False):
-        if not running:
+        if running:
             dialog = QFileDialog(self)
             dialog.setDirectory(os.path.join(os.path.dirname(__file__)))
             dialog.setFileMode(QFileDialog.FileMode.AnyFile)
             dialog.setViewMode(QFileDialog.ViewMode.List)
 
-            filenames, ok = dialog.getSaveFileName(
-                self, "Save File", "", "Text Files (*.txt);; CSV (*.csv)"
+            date = datetime.datetime.now().strftime("%Y%m%d")
+
+            filename, filetype = dialog.getSaveFileName(
+                self,
+                "Save File",
+                f"{date}_log_file",
+                "Text Files (*.txt);; CSV (*.csv)",
             )
-            if ok and filenames:
-                self.file_locator.setText(filenames)
+            self.action_monitor.append(f"Got log file path: {filename}")
+            if filename:
+                self.file_locator.setText(filename)
+                if not os.path.exists(filename):
+                    with open(
+                        filename,
+                        "a",
+                    ) as f:
+                        f.write(",".join(self.data_titles) + "\n")
+                        f.flush()
 
                 self.log_file_browse.setText("Stop Logging")
+                self.log_file_location = filename
                 self.logging_timer.start(1000)
+                self.file_locator.setEnabled(False)
                 self.logging_interval_edit.setEnabled(True)
+                self.action_monitor.append(f"Started logging to {filename}")
             else:
                 self.log_file_browse.setChecked(False)
         else:
             self.log_file_browse.setText("Start Logging")
             self.logging_timer.stop()
+
+            self.action_monitor.append(f"Logging stopped")
             # self.log_file.close()
             # self.log_file = None
-
-    def log(self):
-        print("logging", self.logging_timer.interval())
 
     def connect_controller(self, serial_port: str = None):
         if serial_port is None:
@@ -290,10 +298,11 @@ class LoggerInterface(QMainWindow):
             self.attodry_controller.Connect(serial_port)
             # time.sleep(30)
 
-            # self.timer.start(1000)  # Read data every second
+            for widget in self.findChildren(QWidget):
+                widget.setEnabled(True)
             self.connect_button.setEnabled(False)
-            self.disconnect_button.setEnabled(True)
             self.action_monitor.append(f"Connected to serial port {serial_port}")
+            self.is_connected = True
         except Exception as e:
             self.action_monitor.append(f"Failed to connect to serial port: {str(e)}")
 
@@ -301,9 +310,11 @@ class LoggerInterface(QMainWindow):
         try:
             self.attodry_controller.Disconnect()
             self.attodry_controller.end()
-
+            for widget in self.findChildren((QPushButton, QLineEdit)):
+                if widget == self.connect_button or widget == self.port_combo:
+                    continue
+                widget.setEnabled(False)
             self.connect_button.setEnabled(True)
-            self.disconnect_button.setEnabled(False)
             self.action_monitor.append(f"Disconnected from serial port")
             # self.timer.stop()
         except Exception as e:
@@ -311,9 +322,66 @@ class LoggerInterface(QMainWindow):
                 f"Failed to disconnect from serial port: {str(e)}"
             )
 
-    def update_plot(self, new_data_point):  # Simulate a measurement
-        self.data.append(new_data_point)
-        self.canvas.update_plot(self.data)
+    def get_values(self):
+        repeat = True
+        while repeat:
+            try:
+                # temperature = self.attodry_controller.getSampleTemperature()
+                # pressure = self.attodry_controller.getPressure800()
+                # lk_sample_temperature = self.attodry_controller.get4KStageTemperature()
+                # heat_power = self.attodry_controller.getSampleHeaterPower()
+                # turbo_pump_frequency = self.attodry_controller.GetTurbopumpFrequ800()
+                #
+                # user_temperature = self.attodry_controller.getUserTemperature()
+
+                # self.data.append(
+                #     [
+                #         temperature,
+                #         pressure,
+                #         lk_sample_temperature,
+                #         heat_power,
+                #         turbo_pump_frequency,
+                #     ]
+                # )
+
+                # self.user_temperature = user_temperature
+
+                data = [
+                    1 + random.random(),
+                    2 + random.random(),
+                    3 + random.random(),
+                    4 + random.random(),
+                    5 + random.random(),
+                ]
+
+                self.updatedData.emit(data)
+                repeat = False
+            except Exception as e:
+                self.action_monitor.append(f"Failed to get values {e}")
+
+    def plot_data(self, new_data_points):
+        print("HERE")
+        print(self.data)
+        print(new_data_points)
+        print(len(self.canvases))
+        for data, data_point, plot_widget in zip(
+            self.data, new_data_points, self.canvases
+        ):
+            print(data_point)
+            data.append(data_point)
+            if len(data) > 200:
+                data = data[-200:]
+            plot_widget.plot(data, clear=True, pen=pg.mkPen("b"))  # Blue pen
+            if len(data) > 1:
+                plot_widget.enableAutoRange("x")
+
+    def log_data(self, new_data_points):
+        with open(
+            self.log_file_location,
+            "a",
+        ) as f:
+            f.write(",".join(map(str, new_data_points)) + "\n")
+            f.flush()
 
 
 if __name__ == "__main__":
