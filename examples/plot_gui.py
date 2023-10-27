@@ -1,8 +1,8 @@
 import sys
 import random
 import logging
-from PyQt6.QtCore import QTimer
-from PyQt6.QtWidgets import (
+from PyQt5.QtCore import QTimer
+from PyQt5.QtWidgets import (
     QApplication,
     QMainWindow,
     QVBoxLayout,

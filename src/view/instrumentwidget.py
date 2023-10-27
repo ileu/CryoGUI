@@ -1,9 +1,9 @@
 import typing
 from abc import abstractmethod, ABC
 
-from PyQt6.QtCore import pyqtSignal
-from PyQt6.QtWidgets import QWidget
-from PyQt6.uic.properties import QtGui
+from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtWidgets import QWidget
+from PyQt5.uic.properties import QtGui
 
 
 class InstrumentWidget(QWidget):

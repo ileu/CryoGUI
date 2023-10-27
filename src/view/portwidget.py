@@ -1,6 +1,6 @@
 import sys
 import threading
-from PyQt6.QtWidgets import (
+from PyQt5.QtWidgets import (
     QApplication,
     QMainWindow,
     QLabel,
@@ -11,9 +11,10 @@ from PyQt6.QtWidgets import (
     QPushButton,
     QLineEdit,
     QFileDialog,
+    QAction
 )
-from PyQt6.QtGui import QImage, QPixmap, QIcon, QAction
-from PyQt6.QtCore import QTimer
+from PyQt5.QtGui import QImage, QPixmap, QIcon
+from PyQt5.QtCore import QTimer
 from serial.tools.list_ports import comports
 
 

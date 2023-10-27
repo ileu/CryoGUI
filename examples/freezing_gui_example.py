@@ -10,7 +10,7 @@ from PyQt5.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from PyQt6.QtCore import QObject, pyqtSignal, QThread
+from PyQt5.QtCore import QObject, pyqtSignal, QThread
 
 
 # example taken from https://realpython.com/python-pyqt-qthread/#freezing-a-gui-with-long-running-tasks

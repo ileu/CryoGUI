@@ -1,8 +1,8 @@
 import sys
 import time
 
-from PyQt6.QtCore import QThread, pyqtSignal, QThreadPool, QRunnable, Qt
-from PyQt6.QtWidgets import (
+from PyQt5.QtCore import QThread, pyqtSignal, QThreadPool, QRunnable, Qt
+from PyQt5.QtWidgets import (
     QApplication,
     QVBoxLayout,
     QMainWindow,

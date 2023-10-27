@@ -3,7 +3,7 @@ import os
 import time
 
 import numpy as np
-from PyQt6.QtCore import pyqtSignal, QObject, QThread
+from PyQt5.QtCore import pyqtSignal, QObject, QThread
 from onglabsuite.instruments.thorlabs.pm100d import PM100D
 from pymeasure.instruments.attocube import ANC300Controller
 

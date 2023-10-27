@@ -1,10 +1,9 @@
 import sys
-from typing import Callable
 
-from PyQt6 import QtCore
-from PyQt6.QtCore import Qt, pyqtSignal
-from PyQt6.QtGui import QDoubleValidator
-from PyQt6.QtWidgets import (
+from PyQt5 import QtCore
+from PyQt5.QtCore import Qt, pyqtSignal
+from PyQt5.QtGui import QDoubleValidator, QIntValidator
+from PyQt5.QtWidgets import (
     QWidget,
     QLineEdit,
     QPushButton,
@@ -41,7 +40,6 @@ class IncrementWidget(QWidget):
         self, parent: QWidget = None, title: str = "TEST", unit: str = "", **kwargs
     ):
         super().__init__(parent, **kwargs)
-        self.value = 0.0
 
         self.title = QLabel(title + unit)
         self.input = QLineEdit()
@@ -60,7 +58,7 @@ class IncrementWidget(QWidget):
         self.input.setContentsMargins(0, 0, 0, 0)
         self.input.setStyleSheet(line_edit_style_large)
         self.input.setFixedSize(65, 40)
-        self.input.setValidator(QDoubleValidator())
+        self.input.setValidator(QIntValidator(bottom=0))
         self.input.setPlaceholderText("0")
 
         self.plus_button.setStyleSheet(
@@ -113,9 +111,7 @@ class IncrementWidget(QWidget):
         except ValueError:
             return
 
-        self.value += incr_number
-
-        self.valueChanged.emit(self.value, "up")
+        self.valueChanged.emit(incr_number, "up")
 
     def decrementValue(self):
         try:
@@ -123,19 +119,21 @@ class IncrementWidget(QWidget):
         except ValueError:
             return
 
-        self.value -= incr_number
-
-        self.valueChanged.emit(self.value, "down")
+        self.valueChanged.emit(incr_number, "down")
 
 
 class SetWidget(QWidget):
     valueChanged = QtCore.pyqtSignal(float)
 
-    def __init__(self, title="", symbols: int = 7, unit: str = "", **kwargs):
+    def __init__(
+        self, title="", symbols: int = 7, unit: str = "", bottom=0, top=60, **kwargs
+    ):
         super().__init__()
         self.value = 0
         self.symbols = symbols
         self.unit = unit
+        self.top = top
+        self.bottom = bottom
 
         self.title = QLabel(f"{title} [{unit}]")
         self.input = QLineEdit()
@@ -152,7 +150,8 @@ class SetWidget(QWidget):
             + "QLineEdit { border-top-right-radius: 0px; border-bottom-right-radius: 0px;}"
         )
         self.input.setFixedSize((self.symbols + 1) * 10, 24)  # +1 because decimal point
-        self.input.setValidator(QDoubleValidator())
+        print(self.top)
+        self.input.setValidator(QDoubleValidator(bottom=self.bottom, top=self.top))
         self.input.returnPressed.connect(self.setValue)
         self.input.setPlaceholderText(f"{self.value}"[: self.symbols - 1])
         self.input.setMaxLength(int(self.symbols))
@@ -180,7 +179,10 @@ class SetWidget(QWidget):
 
     def setValue(self):
         try:
-            self.value = float(self.input.text())
+            if self.input.hasAcceptableInput():
+                self.value = float(self.input.text())
+            else:
+                return
         except ValueError:
             self.value = 0.0
 

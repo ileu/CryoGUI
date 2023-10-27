@@ -1,9 +1,9 @@
 import os
 import time
 
-from PyQt6.QtCore import Qt, QThread, pyqtSlot
-from PyQt6.QtGui import QIcon
-from PyQt6.QtWidgets import (
+from PyQt5.QtCore import Qt, QThread, pyqtSlot
+from PyQt5.QtGui import QIcon
+from PyQt5.QtWidgets import (
     QWidget,
     QPushButton,
     QApplication,
@@ -12,7 +12,7 @@ from PyQt6.QtWidgets import (
     QGridLayout,
     QFrame,
 )
-from PyQt6.QtCore import pyqtSignal
+from PyQt5.QtCore import pyqtSignal
 from pymeasure.instruments.attocube.anc300 import Axis
 
 from src.dummies.dummies import DummyOpenLoopAxis
@@ -71,9 +71,11 @@ class OpenLoopWidget(QFrame):
         self.statusUpdated.connect(self.control_bar.status_label.setText)
         self.statusUpdated.emit("Disconnected")
 
-        self.voltage_widget = SetWidget(title="Voltage", symbols=8, unit="V")
-        self.frequency_widget = SetWidget(title="Frequency", symbols=8, unit="Hz")
-        self.offset_widget = SetWidget(title="Offset", symbols=8, unit="V")
+        self.voltage_widget = SetWidget(title="Voltage", symbols=8, unit="V", top=60)
+        self.frequency_widget = SetWidget(
+            title="Frequency", symbols=8, unit="Hz", top=900
+        )
+        self.offset_widget = SetWidget(title="Offset", symbols=8, unit="V", top=90)
 
         self.step_widget = IncrementWidget(title="Step")
 
@@ -210,9 +212,6 @@ class OpenLoopWidget(QFrame):
 
     def deactivate(self):
         for widget in self.findChildren(QWidget):
-            # if widget == self.optimize_button:
-            #     logger.debug(f"Skipping {widget}")
-            #     continue
             logger.debug(f"Disabling {widget}")
             widget.setEnabled(False)
 

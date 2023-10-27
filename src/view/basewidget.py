@@ -1,4 +1,4 @@
-from PyQt6.QtWidgets import QWidget
+from PyQt5.QtWidgets import QWidget
 
 
 class BaseWidget(QWidget):

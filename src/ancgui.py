@@ -3,9 +3,8 @@ import threading
 import time
 from typing import List
 
-from PyQt6.QtCore import pyqtSignal
-from PyQt6.QtGui import QAction
-from PyQt6.QtWidgets import (
+from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtWidgets import (
     QApplication,
     QMainWindow,
     QVBoxLayout,
@@ -14,6 +13,7 @@ from PyQt6.QtWidgets import (
     QLabel,
     QFrame,
     QPushButton,
+    QAction,
 )
 from pymeasure.instruments.attocube.anc300 import Axis
 from pymeasure.instruments.attocube import ANC300Controller

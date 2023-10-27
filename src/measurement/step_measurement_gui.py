@@ -4,8 +4,8 @@ import sys
 import logging
 
 import matplotlib
-from PyQt6.QtCore import QThread, pyqtSlot
-from PyQt6.QtWidgets import (
+from PyQt5.QtCore import QThread, pyqtSlot
+from PyQt5.QtWidgets import (
     QApplication,
     QMainWindow,
     QVBoxLayout,

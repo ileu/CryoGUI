@@ -1,4 +1,4 @@
-from PyQt6.QtWidgets import (
+from PyQt5.QtWidgets import (
     QMainWindow,
     QLabel,
     QStatusBar,
@@ -48,7 +48,7 @@ class UniGui(QMainWindow):
 
 if __name__ == "__main__":
     import sys
-    from PyQt6.QtWidgets import QApplication
+    from PyQt5.QtWidgets import QApplication
 
     app = QApplication([])
     window = UniGui()

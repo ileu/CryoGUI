@@ -1,9 +1,9 @@
 import sys
 import time
 
-from PyQt6.QtCore import QThread, pyqtSignal, QThreadPool, QRunnable, Qt, QTimer
-from PyQt6.QtGui import QValidator, QIntValidator
-from PyQt6.QtWidgets import (
+from PyQt5.QtCore import QThread, pyqtSignal, QThreadPool, QRunnable, Qt, QTimer
+from PyQt5.QtGui import QValidator, QIntValidator
+from PyQt5.QtWidgets import (
     QApplication,
     QVBoxLayout,
     QMainWindow,

@@ -1,5 +1,5 @@
-from PyQt6 import QtSerialPort, QtCore
-from PyQt6.QtWidgets import (
+from PyQt5 import QtSerialPort, QtCore
+from PyQt5.QtWidgets import (
     QDialog,
     QTextEdit,
     QPushButton,
@@ -89,7 +89,7 @@ class SerialConnect(QDialog):
 
 if __name__ == "__main__":
     import sys
-    from PyQt6.QtWidgets import QApplication
+    from PyQt5.QtWidgets import QApplication
 
     app = QApplication([])
     window = SerialConnect()

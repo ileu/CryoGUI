@@ -3,13 +3,13 @@ import threading
 import time
 from typing import List
 
-from PyQt6.QtCore import pyqtSignal
-from PyQt6.QtGui import QAction
-from PyQt6.QtWidgets import (
+from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtWidgets import (
     QApplication,
     QVBoxLayout,
     QWidget,
     QInputDialog,
+    QAction,
 )
 from src.view import ClosedLoopWidget
 

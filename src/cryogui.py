@@ -46,7 +46,7 @@ class Messenger(QThread):
         # self.device
 
 
-class LoggerInterface(QMainWindow):
+class CryoWidget(QMainWindow):
     updatedData = pyqtSignal(list)
 
     def __init__(self):

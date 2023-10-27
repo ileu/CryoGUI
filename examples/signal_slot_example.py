@@ -1,7 +1,7 @@
 import sys
 
-from PyQt6.QtCore import pyqtSignal, QObject, Qt, pyqtSlot
-from PyQt6.QtWidgets import (
+from PyQt5.QtCore import pyqtSignal, QObject, Qt, pyqtSlot
+from PyQt5.QtWidgets import (
     QApplication,
     QMainWindow,
     QWidget,

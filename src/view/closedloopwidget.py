@@ -1,7 +1,7 @@
 import sys
 
-from PyQt6.QtGui import QDoubleValidator
-from PyQt6.QtWidgets import (
+from PyQt5.QtGui import QDoubleValidator
+from PyQt5.QtWidgets import (
     QApplication,
     QWidget,
     QVBoxLayout,
@@ -11,7 +11,7 @@ from PyQt6.QtWidgets import (
     QPushButton,
     QStyle,
 )
-from PyQt6.QtCore import Qt
+from PyQt5.QtCore import Qt
 
 from src.controller.axis import Axis
 from src.dummies.dummies import DummyOpenLoopAxis
