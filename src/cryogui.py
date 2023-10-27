@@ -48,6 +48,7 @@ class Messenger(QThread):
 
 class CryoWidget(QMainWindow):
     updatedData = pyqtSignal(list)
+    updatedUserTemperature = pyqtSignal(float)
 
     def __init__(self, parent=None):
         super().__init__(parent=parent)
@@ -82,12 +83,13 @@ class CryoWidget(QMainWindow):
         ]
 
         self.data_names = [
-            "Temperature / K",
-            "Pressure / mbar",
-            "Temperature / K",
-            "Power / W",
-            "Frequency / Hz",
+            "Temperature",
+            "Pressure",
+            "Temperature",
+            "Power",
+            "Frequency",
         ]
+        self.data_units = ["K", "mbar", "K", "W", "Hz"]
         self.data_titles = [
             "sample-temp_K",
             "sample-pres_mbar",
@@ -199,6 +201,7 @@ class CryoWidget(QMainWindow):
         self.pushButton_6 = QPushButton("Set PID")
         self.horizontalLayout.addWidget(self.pushButton_6)
         self.lineEdit_2 = QLineEdit(self)
+        self.updatedUserTemperature.connect(lambda x: self.lineEdit_2.setText(str(x)))
         self.horizontalLayout.addWidget(self.lineEdit_2)
         self.lineEdit_3 = QLineEdit(self)
         self.horizontalLayout.addWidget(self.lineEdit_3)
@@ -239,7 +242,9 @@ class CryoWidget(QMainWindow):
         for i, plot_widget in enumerate(self.canvases):
             plot_widget.showGrid(x=True, y=True, alpha=0.5)
             plot_widget.getAxis("bottom").setLabel("Time", units="s")
-            plot_widget.getAxis("left").setLabel(self.data_names[i], units="units")
+            plot_widget.getAxis("left").setLabel(
+                self.data_names[i], units=self.data_units[i]
+            )
             plot_widget.getAxis("bottom").setPen(pg.mkPen(color="k"))
             plot_widget.getAxis("left").setPen(pg.mkPen(color="k"))
             plot_widget.setBackground("w")  # White background
@@ -296,7 +301,7 @@ class CryoWidget(QMainWindow):
         try:
             self.attodry_controller.begin()
             self.attodry_controller.Connect(serial_port)
-            time.sleep(30)
+            # time.sleep(30)
 
             for widget in self.findChildren(QWidget):
                 widget.setEnabled(True)
@@ -323,8 +328,7 @@ class CryoWidget(QMainWindow):
             )
 
     def get_values(self):
-        repeat = True
-        while repeat:
+        for i in range(4):
             try:
                 temperature = self.attodry_controller.getSampleTemperature()
                 pressure = self.attodry_controller.getPressure800()
@@ -333,6 +337,8 @@ class CryoWidget(QMainWindow):
                 turbo_pump_frequency = self.attodry_controller.GetTurbopumpFrequ800()
 
                 user_temperature = self.attodry_controller.getUserTemperature()
+
+                self.updatedUserTemperature.emit(user_temperature)
 
                 data = [
                     temperature,
@@ -353,15 +359,13 @@ class CryoWidget(QMainWindow):
                 # ]
 
                 self.updatedData.emit(data)
-                repeat = False
+                break
             except Exception as e:
                 self.action_monitor.append(f"Failed to get values {e}")
+                self.action_monitor.append(f"Retrying {4-i} times in 1 second")
+                time.sleep(1)
 
     def plot_data(self, new_data_points):
-        print("HERE")
-        print(self.data)
-        print(new_data_points)
-        print(len(self.canvases))
         for data, data_point, plot_widget in zip(
             self.data, new_data_points, self.canvases
         ):
@@ -384,7 +388,7 @@ class CryoWidget(QMainWindow):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    window = LoggerInterface()
+    window = CryoWidget()
     window.setWindowTitle("Logger Interface")
     window.setGeometry(100, 20, 1500, 800)
     window.show()

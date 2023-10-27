@@ -1,7 +1,6 @@
 import logging
+import random
 from typing import List
-
-from pymeasure.instruments.attocube import ANC300Controller
 
 from src.dummies.dummies import DummyOpenLoopAxis
 
@@ -57,7 +56,7 @@ class DummyAMC300Controller(DummyController):
 
     def connect(self):
         for i in range(3):
-            self.axes.append(DummyOpenLoopAxis(i))
+            self.axes.append(DummyOpenLoopAxis(str(i)))
         return True
 
     def disconnect(self):
@@ -96,6 +95,24 @@ class DummyAttoDRY(DummyController):
 
     def goToBaseTemperature(self):
         pass
+
+    def getSampleTemperature(self):
+        return random.uniform(4, 100)
+
+    def getPressure800(self):
+        return random.uniform(0, 1e-6)
+
+    def get4KStageTemperature(self):
+        return random.uniform(4, 4.4)
+
+    def getSampleHeaterPower(self):
+        return random.uniform(0, 3)
+
+    def GetTurbopumpFrequ800(self):
+        return random.uniform(0, 1200)
+
+    def getUserTemperature(self):
+        return random.uniform(273, 274)
 
 
 if __name__ == "__main__":

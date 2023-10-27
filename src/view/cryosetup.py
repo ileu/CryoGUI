@@ -20,9 +20,9 @@ from src.ancgui import ANCGUI
 from src.cryogui import CryoWidget
 
 
-class SmaractSetupGUI(WindowSidebarTabs):
+class CryoSetup(WindowSidebarTabs):
     def __init__(self, parent=None):
-        super(SmaractSetupGUI, self).__init__(parent)
+        super(CryoSetup, self).__init__(parent)
         self.show()
 
         ui_path = os.path.dirname(os.path.abspath(__file__))
@@ -189,5 +189,5 @@ class SmaractSetupGUI(WindowSidebarTabs):
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
-    window = SmaractSetupGUI()
+    window = CryoSetup()
     sys.exit(app.exec_())

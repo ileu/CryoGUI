@@ -1,5 +1,5 @@
 N7776C,Laser,TCPIP0::192.168.10.120::inst0::INSTR
 PM100D,Power Meter,USB0::0x1313::0x8078::P0021350::INSTR
 N7744C,Power Meter,TCPIP0::192.168.10.110::inst0::INSTR
-AMC300Controller,3
-ANC300Controller,4
+AMC300Controller,Movement Stage,3
+ANC300Controller,Movement Stage,4
