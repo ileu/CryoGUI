@@ -28,8 +28,8 @@ logger = logging.getLogger(__name__)
 
 
 class ANCGUI(InstrumentWidget):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, parent=None):
+        super().__init__(parent=parent)
         self.ip_address = None
         self.ancController = None
 

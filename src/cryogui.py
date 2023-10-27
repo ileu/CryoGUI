@@ -26,9 +26,9 @@ from PyQt5.QtWidgets import (
 from pyqtgraph import PlotWidget
 import pyqtgraph as pg
 
-from src.AttoDRY import AttoDRY, Cryostats
+# from src.AttoDRY import AttoDRY, Cryostats
 
-# from src.dummies.dummycontroller import DummyAttoDRY
+from src.dummies.dummycontroller import DummyAttoDRY
 
 
 class Messenger(QThread):
@@ -49,17 +49,17 @@ class Messenger(QThread):
 class CryoWidget(QMainWindow):
     updatedData = pyqtSignal(list)
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, parent=None):
+        super().__init__(parent=parent)
 
         self.serial_port = None
         self.log_file_location = None
 
-        self.attodry_controller = AttoDRY(
-            setup_version=Cryostats.ATTODRY800, com_port=None
-        )
+        # self.attodry_controller = AttoDRY(
+        #     setup_version=Cryostats.ATTODRY800, com_port=None
+        # )
 
-        # self.attodry_controller = DummyAttoDRY()
+        self.attodry_controller = DummyAttoDRY()
         self.is_connected = False
         self.action_monitor = QTextEdit()
         self.port_combo = QComboBox()

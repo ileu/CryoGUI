@@ -85,6 +85,18 @@ class DummyAttoDRY(DummyController):
         self.connected = False
         self.com_port = None
 
+    def Confirm(self):
+        return True
+
+    def Cancel(self):
+        return True
+
+    def startSampleExchange(self):
+        pass
+
+    def goToBaseTemperature(self):
+        pass
+
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)

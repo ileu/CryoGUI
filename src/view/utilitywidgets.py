@@ -150,7 +150,6 @@ class SetWidget(QWidget):
             + "QLineEdit { border-top-right-radius: 0px; border-bottom-right-radius: 0px;}"
         )
         self.input.setFixedSize((self.symbols + 1) * 10, 24)  # +1 because decimal point
-        print(self.top)
         self.input.setValidator(QDoubleValidator(bottom=self.bottom, top=self.top))
         self.input.returnPressed.connect(self.setValue)
         self.input.setPlaceholderText(f"{self.value}"[: self.symbols - 1])
