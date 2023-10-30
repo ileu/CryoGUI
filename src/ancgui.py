@@ -64,20 +64,29 @@ class ANCGUI(InstrumentWidget):
     def connect_instrument(
         self, address: str, axis: list = None, passwd: str = "123456"
     ) -> bool:
+        if not address:
+            address, ok = QInputDialog.getText(
+                self, "ANC300 IP Address", "Enter IP address:"
+            )
+            if not ok:
+                return False
+        logger.info(f"Connecting to ANC300 on {address}")
         if axis is None:
             axis = self.axis
 
         try:
-            ancController = DummyANC300Controller(
+            # ancController = DummyANC300Controller(
+            #     adapter=address, axisnames=axis, passwd=passwd
+            # )
+            ancController: ANC300Controller = ANC300Controller(
                 adapter=address, axisnames=axis, passwd=passwd
             )
-            # ancController: ANC300Controller = ANC300Controller(
-            #     adapter=address, axisnames=axis, passwdw=passwd
-            # )
         except Exception as e:
+            logger.error(f"Connection failed: {e}")
             self.statusUpdated.emit(f"Connection failed: {e}")
             return False
 
+        logger.info("Connected to ANC300")
         self.is_connected = True
         self.ancController = ancController
         self.statusUpdated.emit("Connected")
@@ -85,6 +94,7 @@ class ANCGUI(InstrumentWidget):
             axis_widget.axis = getattr(ancController, axis_widget.title)
             axis_widget.activate()
         self.activate_widgets()
+        logger.info("ANC300 initialized")
         return True
 
     def disconnect_instrument(self) -> bool:
@@ -99,5 +109,5 @@ def main():
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.DEBUG)
     main()

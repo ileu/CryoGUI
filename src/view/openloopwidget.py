@@ -57,7 +57,7 @@ class OpenLoopWidget(QFrame):
     def __init__(
         self,
         parent: QWidget = None,
-        axis: Axis | DummyOpenLoopAxis = None,
+        axis: Axis = None,
         title: str = "Quantity",
         lock_optimize_on_start: bool = True,
         **kwargs,
@@ -191,7 +191,7 @@ class OpenLoopWidget(QFrame):
             logger.debug(f"Enabling {widget}")
             widget.setEnabled(True)
 
-        self.control_bar.mode_button.setText(self.axis.status)
+        self.control_bar.mode_button.setText(self.axis.mode.upper())
 
         self.voltage_widget.valueChanged.connect(
             lambda value: setattr(self.axis, "voltage", value)
