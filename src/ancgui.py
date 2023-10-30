@@ -14,6 +14,7 @@ from PyQt5.QtWidgets import (
     QFrame,
     QPushButton,
     QAction,
+    QLineEdit,
 )
 from pymeasure.instruments.attocube.anc300 import Axis
 from pymeasure.instruments.attocube import ANC300Controller
@@ -42,7 +43,14 @@ class ANCGUI(InstrumentWidget):
         self.connect_button.clicked.connect(self.connect_instrument)
         mainLayout.addWidget(self.connect_button)
 
-        self.axis = ["LX", "LY", "LZ", "RX", "RY", "RZ"]
+        self.axis = [
+            "RZ",
+            "RY",
+            "RX",
+            "LZ",
+            "LX",
+            "LY",
+        ]
         self.axis_widgets = {}
 
         for axi in self.axis:
@@ -66,7 +74,11 @@ class ANCGUI(InstrumentWidget):
     ) -> bool:
         if not address:
             address, ok = QInputDialog.getText(
-                self, "ANC300 IP Address", "Enter IP address:"
+                self,
+                "ANC300 IP Address",
+                "Enter IP address:",
+                QLineEdit.Normal,
+                "TCPIP::192.168.1.2::7230::SOCKET",
             )
             if not ok:
                 return False
@@ -75,12 +87,12 @@ class ANCGUI(InstrumentWidget):
             axis = self.axis
 
         try:
-            ancController = DummyANC300Controller(
-                adapter=address, axisnames=axis, passwd=passwd
-            )
-            # ancController: ANC300Controller = ANC300Controller(
+            # ancController = DummyANC300Controller(
             #     adapter=address, axisnames=axis, passwd=passwd
             # )
+            ancController: ANC300Controller = ANC300Controller(
+                adapter=address, axisnames=axis, passwd=passwd
+            )
         except Exception as e:
             logger.error(f"Connection failed: {e}")
             self.statusUpdated.emit(f"Connection failed: {e}")

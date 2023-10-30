@@ -92,7 +92,7 @@ class OpenLoopWidget(QFrame):
 
         self.lock_button.clicked.connect(self.optimize_button.setEnabled)
         self.measuredCapacity.connect(
-            lambda x: self.control_bar.capacity_button.setText(str(x).format(".2f"))
+            lambda x: self.control_bar.capacity_button.setText(f"{x:.2g} nF")
         )
 
         self.lock_path = os.path.join(os.path.dirname(__file__), r"..\icons")
@@ -167,8 +167,8 @@ class OpenLoopWidget(QFrame):
         self.setLayout(main_layout)
 
     def measure_capacity(self):
-        self.statusUpdated.emit("Measuring Capacity")
         logger.info("Measuring Capacity")
+        self.statusUpdated.emit("Measuring Capacity")
         self.axis.mode = "cap"
         # wait for the measurement to finish
         # ask if really finished
@@ -193,7 +193,7 @@ class OpenLoopWidget(QFrame):
 
     def step_axis(self, value: float, direction: str):
         logger.debug(f"Step {direction} by {value}")
-        if self.axis.offset != 0:
+        if self.axis.offset_voltage != 0:
             self.axis.mode = "stp+"
             self.statusUpdated.emit("stp")
         else:
@@ -202,9 +202,9 @@ class OpenLoopWidget(QFrame):
 
         try:
             if direction == "up":
-                self.axis.stepu(value)
+                self.axis.stepu = value
             elif direction == "down":
-                self.axis.stepd(value)
+                self.axis.stepd = value
             else:
                 logger.warning(f"Invalid direction {direction}")
         except Exception as e:
@@ -219,11 +219,13 @@ class OpenLoopWidget(QFrame):
             widget.setEnabled(True)
 
         self.control_bar.mode_button.setText(self.axis.mode.upper())
-
-        print(self.axis.voltage, self.axis.frequency, self.axis.offset)
+        time.sleep(0.1)
         self.voltage_widget.input.setText(str(self.axis.voltage))
+        time.sleep(0.1)
         self.frequency_widget.input.setText(str(self.axis.frequency))
-        self.offset_widget.input.setText(str(self.axis.offset))
+        time.sleep(0.1)
+        self.offset_widget.input.setText(str(self.axis.offset_voltage))
+        time.sleep(0.1)
 
         self.measure_capacity()
 
