@@ -65,9 +65,6 @@ class ANCGUI(InstrumentWidget):
         for ax_wid in self.axis_widgets.values():
             ax_wid.update()
 
-    def execute(self):
-        pass
-
     def connect_instrument(
         self, address: str = None, axis: list = None, passwd: str = "123456"
     ) -> bool:

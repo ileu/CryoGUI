@@ -3,7 +3,6 @@ from abc import abstractmethod, ABC
 
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtWidgets import QWidget
-from PyQt5.uic.properties import QtGui
 
 
 class InstrumentWidget(QWidget):
@@ -19,10 +18,6 @@ class InstrumentWidget(QWidget):
 
     @abstractmethod
     def refresh(self):
-        raise NotImplementedError
-
-    @abstractmethod
-    def execute(self):
         raise NotImplementedError
 
     @abstractmethod
