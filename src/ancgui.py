@@ -3,7 +3,7 @@ import threading
 import time
 from typing import List
 
-from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtCore import pyqtSignal, QThread
 from PyQt5.QtWidgets import (
     QApplication,
     QMainWindow,
@@ -15,6 +15,7 @@ from PyQt5.QtWidgets import (
     QPushButton,
     QAction,
     QLineEdit,
+    QHBoxLayout,
 )
 from pymeasure.instruments.attocube.anc300 import Axis
 from pymeasure.instruments.attocube import ANC300Controller
@@ -29,6 +30,8 @@ logger = logging.getLogger(__name__)
 
 
 class ANCGUI(InstrumentWidget):
+    connected = pyqtSignal(bool)
+
     def __init__(self, parent=None):
         super().__init__(parent=parent)
         self.ip_address = None
@@ -38,10 +41,6 @@ class ANCGUI(InstrumentWidget):
         mainLayout.setSpacing(0)
         self.status_label = QLabel("Disconnected")
         self.statusUpdated.connect(self.status_label.setText)
-
-        self.connect_button = QPushButton("Connect", self)
-        self.connect_button.clicked.connect(self.connect_instrument)
-        mainLayout.addWidget(self.connect_button)
 
         self.axis = [
             "RZ",
@@ -70,7 +69,7 @@ class ANCGUI(InstrumentWidget):
         pass
 
     def connect_instrument(
-        self, address: str, axis: list = None, passwd: str = "123456"
+        self, address: str = None, axis: list = None, passwd: str = "123456"
     ) -> bool:
         if not address:
             address, ok = QInputDialog.getText(
@@ -87,26 +86,25 @@ class ANCGUI(InstrumentWidget):
             axis = self.axis
 
         try:
-            # ancController = DummyANC300Controller(
-            #     adapter=address, axisnames=axis, passwd=passwd
-            # )
-            ancController: ANC300Controller = ANC300Controller(
+            ancController = DummyANC300Controller(
                 adapter=address, axisnames=axis, passwd=passwd
             )
+            # ancController: ANC300Controller = ANC300Controller(
+            #     adapter=address, axisnames=axis, passwd=passwd
+            # )
         except Exception as e:
             logger.error(f"Connection failed: {e}")
             self.statusUpdated.emit(f"Connection failed: {e}")
             return False
 
         logger.info("Connected to ANC300")
-        self.is_connected = True
         self.ancController = ancController
         self.statusUpdated.emit("Connected")
         for axis_widget in self.axis_widgets.values():
-            axis_widget.axis = getattr(ancController, axis_widget.title)
+            axis_widget.connect_axis(getattr(ancController, axis_widget.title))
             axis_widget.activate()
-        self.activate_widgets()
         logger.info("ANC300 initialized")
+        self.connected.emit(True)
         return True
 
     def disconnect_instrument(self) -> bool:
@@ -116,8 +114,31 @@ class ANCGUI(InstrumentWidget):
 def main():
     app = QApplication(sys.argv)
     gui = ANCGUI()
-    gui.show()
+
+    window = QMainWindow()
+    central_widget = QWidget()
+    central_widget.setLayout(QHBoxLayout())
+    v_layout = QVBoxLayout()
+    connect_button = QPushButton("Connect")
+    connect_button.clicked.connect(lambda: connect_anc(gui))
+    anc_thread = QThread()
+
+    gui.moveToThread(anc_thread)
+
+    mode_button = QPushButton("Mode")
+    # mode_button.clicked.connnect(lambda: gui.axis_widgets["RZ"].)
+    v_layout.addWidget(connect_button)
+    v_layout.addWidget(mode_button)
+    central_widget.layout().addLayout(v_layout)
+    central_widget.layout().addWidget(gui)
+    window.setCentralWidget(central_widget)
+
+    window.show()
     sys.exit(app.exec())
+
+
+def connect_anc(ancwidget: ANCGUI):
+    ancwidget.connect_instrument("")
 
 
 if __name__ == "__main__":

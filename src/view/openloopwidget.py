@@ -55,6 +55,7 @@ class OpenLoopWidget(QFrame):
     statusUpdated = pyqtSignal(str)
     measuredCapacity = pyqtSignal(float)
     unlockedWidget = pyqtSignal(bool)
+    modeChanged = pyqtSignal(str)
 
     def __init__(
         self,
@@ -92,7 +93,7 @@ class OpenLoopWidget(QFrame):
 
         self.lock_button.clicked.connect(self.optimize_button.setEnabled)
         self.measuredCapacity.connect(
-            lambda x: self.control_bar.capacity_button.setText(f"{x:.2g} nF")
+            lambda x: self.control_bar.capacity_button.setText(f"{int(x)} nF")
         )
 
         self.lock_path = os.path.join(os.path.dirname(__file__), r"..\icons")
@@ -171,6 +172,7 @@ class OpenLoopWidget(QFrame):
         self.statusUpdated.emit("Measuring Capacity")
         self.axis.mode = "cap"
         # wait for the measurement to finish
+        time.sleep(1)
         # ask if really finished
         self.axis.ask("capw")
 
@@ -210,14 +212,8 @@ class OpenLoopWidget(QFrame):
         except Exception as e:
             logger.warning(f"Error stepping axis: {e}")
 
-    def activate(self):
-        for widget in self.findChildren(QWidget):
-            if widget == self.optimize_button:
-                logger.debug(f"Special enabling {widget}")
-                continue
-            logger.debug(f"Enabling {widget}")
-            widget.setEnabled(True)
-
+    def connect_axis(self, axis: Axis):
+        self.axis = axis
         self.control_bar.mode_button.setText(self.axis.mode.upper())
         time.sleep(0.1)
         self.voltage_widget.input.setText(str(self.axis.voltage))
@@ -245,17 +241,38 @@ class OpenLoopWidget(QFrame):
         self.cmovel_button.pressed.connect(lambda: self.step_axis(1, "down"))
         self.cmovel_button.released.connect(lambda: self.step_axis(0, "down"))
 
+    def activate(self):
+        logger.debug(f"Activating {self.title}")
+        self.control_bar.activate()
+        self.voltage_widget.activate()
+        self.frequency_widget.activate()
+        self.offset_widget.activate()
+        self.step_widget.activate()
+        self.cmover_button.setEnabled(True)
+        self.cmovel_button.setEnabled(True)
+        self.lock_button.setEnabled(True)
+        if self.lock_button.isChecked():
+            self.optimize_button.setEnabled(True)
+
     def deactivate(self):
-        for widget in self.findChildren(QWidget):
-            logger.debug(f"Disabling {widget}")
-            widget.setEnabled(False)
+        logger.debug(f"Disabling {self.title}")
+        self.control_bar.deactivate()
+        self.voltage_widget.deactivate()
+        self.frequency_widget.deactivate()
+        self.offset_widget.deactivate()
+        self.step_widget.deactivate()
+        self.cmover_button.setEnabled(False)
+        self.cmovel_button.setEnabled(False)
+        self.lock_button.setEnabled(False)
+        self.optimize_button.setEnabled(False)
 
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     app = QApplication([])
     # olw = OpenLoopWidget(axis=DummyAxis(), title="Test", lock_optimize_on_start=False)
-    olw = OpenLoopWidget(axis=DummyOpenLoopAxis(), lock_optimize_on_start=False)
+    olw = OpenLoopWidget(axis=DummyOpenLoopAxis(), lock_optimize_on_start=True)
+    olw.deactivate()
     olw.activate()
     olw.show()
     app.exec()

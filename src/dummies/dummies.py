@@ -78,18 +78,19 @@ class DummyOpenLoopAxis:
     def __init__(
         self,
         title: str = "Dummy Axis",
-        voltage: float = random.randint(0, 50),
-        frequency: float = random.randint(0, 1000),
-        offset: float = random.randint(0, 50),
-        capacity: float = random.uniform(0, 1e-3),
+        voltage: float = None,
+        frequency: float = None,
+        offset: float = None,
+        capacity: float = None,
         mode: str = "GND",
     ):
         self._title = title
-        self.voltage = voltage
-        self.frequency = frequency
-        self.offset = offset
+
+        self.voltage = voltage if voltage else random.randint(0, 50)
+        self.frequency = frequency if frequency else random.randint(16, 1000)
+        self.offset_voltage = offset if offset else random.randint(0, 50)
         self.mode = mode
-        self.capacity = capacity
+        self.capacity = capacity if capacity else random.uniform(200, 300)
 
     def __getattr__(self, item):
         if item.startswith("_"):

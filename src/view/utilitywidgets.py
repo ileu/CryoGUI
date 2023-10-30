@@ -116,7 +116,7 @@ class IncrementWidget(QWidget):
         except ValueError:
             return
 
-        self.valueChanged.emit(incr_number, "up")
+        self.valueChanged.emit(incr_number, "+")
 
     def decrementValue(self):
         try:
@@ -124,7 +124,17 @@ class IncrementWidget(QWidget):
         except ValueError:
             return
 
-        self.valueChanged.emit(incr_number, "down")
+        self.valueChanged.emit(incr_number, "-")
+
+    def activate(self):
+        self.plus_button.setEnabled(True)
+        self.minus_button.setEnabled(True)
+        self.input.setEnabled(True)
+
+    def deactivate(self):
+        self.plus_button.setEnabled(False)
+        self.minus_button.setEnabled(False)
+        self.input.setEnabled(False)
 
 
 class SetWidget(QWidget):
@@ -190,8 +200,15 @@ class SetWidget(QWidget):
         except ValueError:
             logger.warning(f"{self.title} failed to set value")
 
-        print(f"SET VALUE {self.value}")
         self.valueChanged.emit(self.value)
+
+    def activate(self):
+        self.input.setEnabled(True)
+        self.set_button.setEnabled(True)
+
+    def deactivate(self):
+        self.input.setEnabled(False)
+        self.set_button.setEnabled(False)
 
 
 class ControlBar(QWidget):
@@ -293,20 +310,15 @@ class ControlBar(QWidget):
                 self.style().standardIcon(QStyle.StandardPixmap.SP_MediaPlay)
             )
 
+    def activate(self):
+        self.mode_button.setEnabled(True)
+        self.active_button.setEnabled(True)
+        self.capacity_button.setEnabled(True)
 
-def connect_button_to_axis(widget, button, actions, axis, property):
-    def connection():
-        try:
-            widget.value = float(widget.input.text())
-        except ValueError:
-            widget.value = 0
-        setattr(axis, property, widget.value)
-
-    for action in actions:
-        event = getattr(button, action)
-        event.connect(connection)
-
-    return connection
+    def deactivate(self):
+        self.mode_button.setEnabled(False)
+        self.active_button.setEnabled(False)
+        self.capacity_button.setEnabled(False)
 
 
 if __name__ == "__main__":
