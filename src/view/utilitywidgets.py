@@ -1,4 +1,5 @@
 import sys
+import time
 
 from PyQt5 import QtCore
 from PyQt5.QtCore import Qt, pyqtSignal
@@ -13,6 +14,10 @@ from PyQt5.QtWidgets import (
     QLabel,
     QStyle,
 )
+
+import logging
+
+logger = logging.getLogger(__name__)
 
 push_button_style = (
     "QPushButton {border: 2px solid black; padding-bottom: 2px; "
@@ -183,22 +188,23 @@ class SetWidget(QWidget):
             else:
                 return
         except ValueError:
-            self.value = 0.0
+            logger.warning(f"{self.title} failed to set value")
 
+        print(f"SET VALUE {self.value}")
         self.valueChanged.emit(self.value)
 
 
 class ControlBar(QWidget):
     modeChanged = pyqtSignal(str)
 
-    def __init__(self, title="Title"):
+    def __init__(self, title="Title", off_mode="OFF", on_mode="ON"):
         super().__init__()
 
         self.title_label = QLabel(title)
         self.status_label = QLabel("Status: Disconnected")
 
-        self.off_mode = "OFF"
-        self.on_mode = "ON"
+        self.off_mode = off_mode
+        self.on_mode = on_mode
 
         self.mode_button = QPushButton(self.off_mode)
         self.modeChanged.connect(self.mode_button.setText)
@@ -307,4 +313,7 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = SetWidget(title="HALLO", unit="m", symbols=7)
     window.show()
+    time.sleep(1)
+    window.value = 5
+    print("DONE")
     sys.exit(app.exec())

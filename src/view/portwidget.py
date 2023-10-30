@@ -11,7 +11,7 @@ from PyQt5.QtWidgets import (
     QPushButton,
     QLineEdit,
     QFileDialog,
-    QAction
+    QAction,
 )
 from PyQt5.QtGui import QImage, QPixmap, QIcon
 from PyQt5.QtCore import QTimer

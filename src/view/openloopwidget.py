@@ -53,6 +53,8 @@ class Mover(QThread):
 
 class OpenLoopWidget(QFrame):
     statusUpdated = pyqtSignal(str)
+    measuredCapacity = pyqtSignal(float)
+    unlockedWidget = pyqtSignal(bool)
 
     def __init__(
         self,
@@ -63,7 +65,7 @@ class OpenLoopWidget(QFrame):
         **kwargs,
     ):
         super().__init__(parent, **kwargs)
-        self.control_bar = ControlBar()
+        self.control_bar = ControlBar(off_mode="GND")
 
         self.title = title
         self.control_bar.title_label.setText(title)
@@ -89,6 +91,9 @@ class OpenLoopWidget(QFrame):
         self.movable = False
 
         self.lock_button.clicked.connect(self.optimize_button.setEnabled)
+        self.measuredCapacity.connect(
+            lambda x: self.control_bar.capacity_button.setText(str(x).format(".2f"))
+        )
 
         self.lock_path = os.path.join(os.path.dirname(__file__), r"..\icons")
 
@@ -161,6 +166,21 @@ class OpenLoopWidget(QFrame):
 
         self.setLayout(main_layout)
 
+    def measure_capacity(self):
+        self.statusUpdated.emit("Measuring Capacity")
+        logger.info("Measuring Capacity")
+        self.axis.mode = "cap"
+        # wait for the measurement to finish
+        # ask if really finished
+        self.axis.ask("capw")
+
+        capacity = self.axis.capacity
+
+        logger.info(f"Measured capacity {capacity} nF")
+        self.measuredCapacity.emit(capacity)
+        self.statusUpdated.emit("Ready")
+        return capacity
+
     @pyqtSlot(bool)
     def on_lock_toggled(self, toggle):
         if toggle:
@@ -172,7 +192,14 @@ class OpenLoopWidget(QFrame):
         pass
 
     def step_axis(self, value: float, direction: str):
-        logger.info(f"Step {direction} by {value}")
+        logger.debug(f"Step {direction} by {value}")
+        if self.axis.offset != 0:
+            self.axis.mode = "stp+"
+            self.statusUpdated.emit("stp")
+        else:
+            self.axis.mode = "stp"
+            self.statusUpdated.emit("stp")
+
         try:
             if direction == "up":
                 self.axis.stepu(value)
@@ -193,13 +220,19 @@ class OpenLoopWidget(QFrame):
 
         self.control_bar.mode_button.setText(self.axis.mode.upper())
 
+        print(self.axis.voltage, self.axis.frequency, self.axis.offset)
+        self.voltage_widget.input.setText(str(self.axis.voltage))
+        self.frequency_widget.input.setText(str(self.axis.frequency))
+        self.offset_widget.input.setText(str(self.axis.offset))
+
+        self.measure_capacity()
+
         self.voltage_widget.valueChanged.connect(
             lambda value: setattr(self.axis, "voltage", value)
         )
         self.frequency_widget.valueChanged.connect(
             lambda value: setattr(self.axis, "frequency", value)
         )
-
         self.offset_widget.valueChanged.connect(
             lambda value: setattr(self.axis, "offset_voltage", value)
         )
@@ -221,6 +254,6 @@ if __name__ == "__main__":
     app = QApplication([])
     # olw = OpenLoopWidget(axis=DummyAxis(), title="Test", lock_optimize_on_start=False)
     olw = OpenLoopWidget(axis=DummyOpenLoopAxis(), lock_optimize_on_start=False)
-    olw.deactivate()
+    olw.activate()
     olw.show()
     app.exec()

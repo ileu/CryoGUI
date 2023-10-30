@@ -1,3 +1,4 @@
+import random
 from datetime import datetime
 
 import logging
@@ -77,18 +78,18 @@ class DummyOpenLoopAxis:
     def __init__(
         self,
         title: str = "Dummy Axis",
-        voltage: float = 0,
-        frequency: float = 0,
-        offset: float = 0,
-        step: float = 0,
-        status: str = "GND",
+        voltage: float = random.randint(0, 50),
+        frequency: float = random.randint(0, 1000),
+        offset: float = random.randint(0, 50),
+        capacity: float = random.uniform(0, 1e-3),
+        mode: str = "GND",
     ):
         self._title = title
         self.voltage = voltage
         self.frequency = frequency
         self.offset = offset
-        self.step = step
-        self.status = status
+        self.mode = mode
+        self.capacity = capacity
 
     def __getattr__(self, item):
         if item.startswith("_"):
@@ -101,3 +102,7 @@ class DummyOpenLoopAxis:
             super().__setattr__(key, value)
         logger.info(f"{self._title} set {key}: {value}")
         super().__setattr__(key, value)
+
+    def ask(self, question):
+        if "c" in question:
+            return self.capacity

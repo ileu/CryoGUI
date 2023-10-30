@@ -75,12 +75,12 @@ class ANCGUI(InstrumentWidget):
             axis = self.axis
 
         try:
-            # ancController = DummyANC300Controller(
-            #     adapter=address, axisnames=axis, passwd=passwd
-            # )
-            ancController: ANC300Controller = ANC300Controller(
+            ancController = DummyANC300Controller(
                 adapter=address, axisnames=axis, passwd=passwd
             )
+            # ancController: ANC300Controller = ANC300Controller(
+            #     adapter=address, axisnames=axis, passwd=passwd
+            # )
         except Exception as e:
             logger.error(f"Connection failed: {e}")
             self.statusUpdated.emit(f"Connection failed: {e}")
