@@ -51,8 +51,8 @@ class ANCGUI(InstrumentWidget):
             "RY",
             "RX",
             "LZ",
-            "LX",
             "LY",
+            "LX",
         ]
         self.axis_widgets = {}
 

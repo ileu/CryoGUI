@@ -184,17 +184,18 @@ class OpenLoopWidget(QFrame):
         self.cmove_down_button.pressed.connect(
             lambda: self.controller.step_axis(1, "up")
         )
-        self.cmove_down_button.released.connect(
-            lambda: self.controller.step_axis(0, "up")
-        )
+        # self.cmove_down_button.released.connect(
+        #     lambda: self.controller.step_axis(1, "up")
+        # )
         self.cmove_up_button.pressed.connect(
             lambda: self.controller.step_axis(1, "down")
         )
-        self.cmove_up_button.released.connect(
-            lambda: self.controller.step_axis(0, "down")
-        )
+        # self.cmove_up_button.released.connect(
+        #     lambda: self.controller.step_axis(1, "down")
+        # )
         self.controller.update_values()
         self.activate()
+        self.controller.statusUpdated.emit("Ready")
 
     def connect_keys(self, up_key, down_key):
         if self.controller.axis is None:

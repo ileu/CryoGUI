@@ -63,6 +63,7 @@ class OpenLoopController(QObject):
                 self.axis.stepd = value
             else:
                 logger.warning(f"Invalid direction {direction}")
+            self.statusUpdated.emit("Ready")
         except Exception as e:
             logger.warning(f"Error stepping axis: {e}")
 
