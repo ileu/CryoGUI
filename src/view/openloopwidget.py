@@ -1,8 +1,7 @@
 import logging
 import os
-import time
 
-from PyQt5.QtCore import Qt, QThread, pyqtSlot, QObject
+from PyQt5.QtCore import Qt, QThread, pyqtSlot
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import (
@@ -16,6 +15,7 @@ from PyQt5.QtWidgets import (
 )
 from pymeasure.instruments.attocube.anc300 import Axis
 
+from src.controller.openloopcontroller import OpenLoopController
 from src.dummies.dummies import DummyOpenLoopAxis
 from src.view.utilitywidgets import (
     SetWidget,
@@ -29,75 +29,6 @@ logger = logging.getLogger(__name__)
 
 def scream():
     logger.info("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
-
-
-class OpenLoopController(QObject):
-    statusUpdated = pyqtSignal(str)
-    measuredCapacity = pyqtSignal(float)
-    valuesUpdated = pyqtSignal(list)
-    lockUI = pyqtSignal(bool)
-
-    def __init__(self, axis=None, parent=None):
-        super().__init__(parent)
-        self.axis = axis
-
-    def __getattribute__(self, item):
-        if item != "axis" and self.axis is None:
-            print("Cant do a thing with no axis")
-            print("Set axis first")
-            return None
-
-        return super().__getattribute__(item)
-
-    def measure_capacity(self):
-        logger.info("Measuring Capacity")
-        self.statusUpdated.emit("Measuring Capacity")
-        self.lockUI.emit(False)
-        self.axis.mode = "cap"
-        # wait for the measurement to finish
-        time.sleep(1)
-        # ask if really finished
-        self.axis.ask("capw")
-
-        capacity = self.axis.capacity
-
-        self.axis.mode = "gnd"
-        logger.info(f"Measured capacity {capacity} nF")
-        self.measuredCapacity.emit(capacity)
-        self.lockUI.emit(True)
-        self.statusUpdated.emit("Ready")
-
-    def set_value(self, value: float, name: str):
-        logger.debug(f"Set {name} to {value}")
-        setattr(self.axis, name, value)
-
-    def step_axis(self, value: float, direction: str):
-        logger.debug(f"Step {direction} by {value}")
-        if self.axis.offset_voltage != 0:
-            self.axis.mode = "stp+"
-            self.statusUpdated.emit("stp")
-        else:
-            self.axis.mode = "stp"
-            self.statusUpdated.emit("stp")
-
-        try:
-            if direction == "up":
-                self.axis.stepu = value
-            elif direction == "down":
-                self.axis.stepd = value
-            else:
-                logger.warning(f"Invalid direction {direction}")
-        except Exception as e:
-            logger.warning(f"Error stepping axis: {e}")
-
-    def update_values(self):
-        mode = self.axis.mode
-
-        voltage = self.axis.voltage
-        frequency = self.axis.frequency
-        offset = self.axis.offset_voltage
-
-        self.valuesUpdated.emit([mode.upper(), voltage, frequency, offset])
 
 
 class OpenLoopWidget(QFrame):
@@ -129,8 +60,8 @@ class OpenLoopWidget(QFrame):
         self.optimize_button = QPushButton("Optimize")
         self.optimize_button.setEnabled(False)
         self.lock_button = QPushButton()
-        self.cmover_button = QPushButton(">>")
-        self.cmovel_button = QPushButton("<<")
+        self.cmove_down_button = QPushButton(">>")
+        self.cmove_up_button = QPushButton("<<")
 
         if axis is None:
             self.controller = OpenLoopController()
@@ -149,17 +80,16 @@ class OpenLoopWidget(QFrame):
         self.controller.statusUpdated.connect(self.control_bar.status_label.setText)
         self.controller.statusUpdated.emit("Disconnected")
 
-        self.grounded = False
-        self.movable = False
+        self.control_bar.mode_button.clicked.connect(
+            lambda: self.controller.update_mode("gnd")
+        )
 
-        self.lock_button.clicked.connect(self.optimize_button.setEnabled)
         self.control_bar.capacity_button.clicked.connect(
             self.controller.measure_capacity
         )
-        self.controller.measuredCapacity.connect(
-            lambda x: self.control_bar.capacity_button.setText(f"{int(x)} nF")
-        )
+        self.controller.measuredCapacity.connect(self.control_bar.set_capacity)
 
+        self.lock_button.clicked.connect(self.optimize_button.setEnabled)
         self.lock_path = os.path.join(os.path.dirname(__file__), r"..\icons")
 
         self.on_lock_toggled(not lock_optimize_on_start)
@@ -179,11 +109,11 @@ class OpenLoopWidget(QFrame):
         self.lock_button.setCheckable(True)
         self.lock_button.toggled.connect(self.on_lock_toggled)
 
-        self.cmover_button.setStyleSheet(push_button_style)
-        self.cmover_button.setFixedSize(40, 20)
+        self.cmove_down_button.setStyleSheet(push_button_style)
+        self.cmove_down_button.setFixedSize(40, 20)
 
-        self.cmovel_button.setStyleSheet(push_button_style)
-        self.cmovel_button.setFixedSize(40, 20)
+        self.cmove_up_button.setStyleSheet(push_button_style)
+        self.cmove_up_button.setFixedSize(40, 20)
 
         main_layout = QVBoxLayout()
         main_layout.setSpacing(2)
@@ -210,9 +140,11 @@ class OpenLoopWidget(QFrame):
         cmove_layout = QHBoxLayout()
         cmove_layout.setSpacing(0)
         cmove_layout.addWidget(
-            self.cmovel_button, alignment=Qt.AlignmentFlag.AlignRight
+            self.cmove_up_button, alignment=Qt.AlignmentFlag.AlignRight
         )
-        cmove_layout.addWidget(self.cmover_button, alignment=Qt.AlignmentFlag.AlignLeft)
+        cmove_layout.addWidget(
+            self.cmove_down_button, alignment=Qt.AlignmentFlag.AlignLeft
+        )
 
         step_layout.addLayout(cmove_layout)
         control_layout.addLayout(step_layout, 0, 2, 2, 1)
@@ -228,11 +160,16 @@ class OpenLoopWidget(QFrame):
         else:
             self.lock_button.setIcon(QIcon(self.lock_path + r"\unlock.png"))
 
-    def refresh_values(self):
-        pass
+    def refresh_values(self, values: list):
+        self.voltage_widget.setValue(values[0])
+        self.frequency_widget.setValue(values[1])
+        self.offset_widget.setValue(values[2])
 
     def connect_axis(self, axis: Axis):
         self.controller.axis = axis
+
+        self.controller.modeUpdated.connect(self.control_bar.set_mode)
+        self.controller.valuesUpdated.connect(self.refresh_values)
 
         self.voltage_widget.valueChanged.connect(
             lambda value: self.controller.set_value(value, "voltage")
@@ -244,13 +181,26 @@ class OpenLoopWidget(QFrame):
             lambda value: self.controller.set_value(value, "offset_voltage")
         )
         self.step_widget.valueChanged.connect(self.controller.step_axis)
-        #
-        self.cmover_button.pressed.connect(lambda: self.controller.step_axis(1, "up"))
-        self.cmover_button.released.connect(lambda: self.controller.step_axis(0, "up"))
-        self.cmovel_button.pressed.connect(lambda: self.controller.step_axis(1, "down"))
-        self.cmovel_button.released.connect(
+        self.cmove_down_button.pressed.connect(
+            lambda: self.controller.step_axis(1, "up")
+        )
+        self.cmove_down_button.released.connect(
+            lambda: self.controller.step_axis(0, "up")
+        )
+        self.cmove_up_button.pressed.connect(
+            lambda: self.controller.step_axis(1, "down")
+        )
+        self.cmove_up_button.released.connect(
             lambda: self.controller.step_axis(0, "down")
         )
+        self.controller.update_values()
+        self.activate()
+
+    def connect_keys(self, up_key, down_key):
+        if self.controller.axis is None:
+            return
+        self.cmove_down_button.setShortcut(down_key)
+        self.cmove_up_button.setShortcut(up_key)
 
     def toggle_activation(self, toggle):
         if toggle:
@@ -265,8 +215,8 @@ class OpenLoopWidget(QFrame):
         self.frequency_widget.activate()
         self.offset_widget.activate()
         self.step_widget.activate()
-        self.cmover_button.setEnabled(True)
-        self.cmovel_button.setEnabled(True)
+        self.cmove_down_button.setEnabled(True)
+        self.cmove_up_button.setEnabled(True)
         self.lock_button.setEnabled(True)
         if self.lock_button.isChecked():
             self.optimize_button.setEnabled(True)
@@ -278,8 +228,8 @@ class OpenLoopWidget(QFrame):
         self.frequency_widget.deactivate()
         self.offset_widget.deactivate()
         self.step_widget.deactivate()
-        self.cmover_button.setEnabled(False)
-        self.cmovel_button.setEnabled(False)
+        self.cmove_down_button.setEnabled(False)
+        self.cmove_up_button.setEnabled(False)
         self.lock_button.setEnabled(False)
         self.optimize_button.setEnabled(False)
 
@@ -288,9 +238,8 @@ def main():
     logging.basicConfig(level=logging.INFO)
     app = QApplication([])
     # olw = OpenLoopWidget(axis=DummyAxis(), title="Test", lock_optimize_on_start=False)
-    olw = OpenLoopWidget(axis=DummyOpenLoopAxis(), lock_optimize_on_start=True)
-    olw.deactivate()
-    olw.activate()
+    olw = OpenLoopWidget(lock_optimize_on_start=True)
+    olw.connect_axis(DummyOpenLoopAxis())
     olw.show()
     app.exec()
 

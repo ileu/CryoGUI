@@ -158,6 +158,8 @@ class SetWidget(QWidget):
 
         self.initUI()
 
+        self.valueChanged.connect(lambda x: self.input.setText(str(x)))
+
     def initUI(self):
         self.input.setAlignment(Qt.AlignmentFlag.AlignRight)
         self.input.setStyleSheet(
@@ -191,16 +193,18 @@ class SetWidget(QWidget):
         main_layout.setAlignment(Qt.AlignmentFlag.AlignVCenter)
         self.setLayout(main_layout)
 
-    def setValue(self):
-        try:
-            if self.input.hasAcceptableInput():
-                self.value = float(self.input.text())
-            else:
-                return
-        except ValueError:
-            logger.warning(f"{self.title} failed to set value")
+    def setValue(self, value=None):
+        if not value:
+            try:
+                if self.input.hasAcceptableInput():
+                    value = float(self.input.text())
+                else:
+                    return
+            except ValueError:
+                logger.warning(f"{self.title} failed to set value")
 
-        self.valueChanged.emit(self.value)
+        self.value = value
+        self.valueChanged.emit(value)
 
     def activate(self):
         self.input.setEnabled(True)
@@ -212,8 +216,6 @@ class SetWidget(QWidget):
 
 
 class ControlBar(QWidget):
-    modeChanged = pyqtSignal(str)
-
     def __init__(self, title="Title", off_mode="OFF", on_mode="ON"):
         super().__init__()
 
@@ -224,31 +226,12 @@ class ControlBar(QWidget):
         self.on_mode = on_mode
 
         self.mode_button = QPushButton(self.off_mode)
-        self.modeChanged.connect(self.mode_button.setText)
 
         self.active_button = QPushButton()
 
         self.capacity_button = QPushButton("Cap: NaN")
 
-        self.movable = False
-        self._mode = self.off_mode
-
         self.initUI()
-
-    def toggle_mode(self, status):
-        if status:
-            self.mode = self.on_mode
-        else:
-            self.mode = self.off_mode
-
-    @property
-    def mode(self):
-        return self._mode
-
-    @mode.setter
-    def mode(self, value):
-        self.modeChanged.emit(value)
-        self._mode = value
 
     def initUI(self):
         self.active_button.setCheckable(True)
@@ -278,7 +261,6 @@ class ControlBar(QWidget):
             "QPushButton:disabled {background-color: rgb(200,200,200); }"
         )
         self.mode_button.setFixedSize(40, 20)
-        self.mode_button.clicked.connect(self.toggle_mode)
 
         self.capacity_button.setStyleSheet(
             push_button_style
@@ -298,9 +280,20 @@ class ControlBar(QWidget):
 
         self.setLayout(main_layout)
 
+    def set_mode(self, mode):
+        if mode == self.off_mode:
+            self.mode_button.setText(mode)
+            self.mode_button.setChecked(False)
+        else:
+            self.mode_button.setText(mode)
+            self.mode_button.setChecked(True)
+
+    def set_capacity(self, capacity: float):
+        logger.debug(f"Set capacity to {capacity}")
+        self.capacity_button.setText(f"{int(capacity)}")
+
     @QtCore.pyqtSlot(bool)
     def toggle_activation(self, movable):
-        self.movable = movable
         if movable:
             self.active_button.setIcon(
                 self.style().standardIcon(QStyle.StandardPixmap.SP_MediaPause)
