@@ -1,7 +1,9 @@
+import logging
 import os
 import time
 
-from PyQt5.QtCore import Qt, QThread, pyqtSlot
+from PyQt5.QtCore import Qt, QThread, pyqtSlot, QObject
+from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import (
     QWidget,
@@ -12,7 +14,6 @@ from PyQt5.QtWidgets import (
     QGridLayout,
     QFrame,
 )
-from PyQt5.QtCore import pyqtSignal
 from pymeasure.instruments.attocube.anc300 import Axis
 
 from src.dummies.dummies import DummyOpenLoopAxis
@@ -23,8 +24,6 @@ from src.view.utilitywidgets import (
     ControlBar,
 )
 
-import logging
-
 logger = logging.getLogger(__name__)
 
 
@@ -32,7 +31,7 @@ def scream():
     logger.info("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
 
 
-class OpenLoopController(QRunnable):
+class OpenLoopController(QObject):
     statusUpdated = pyqtSignal(str)
     measuredCapacity = pyqtSignal(float)
     valuesUpdated = pyqtSignal(list)
@@ -53,7 +52,7 @@ class OpenLoopController(QRunnable):
     def measure_capacity(self):
         logger.info("Measuring Capacity")
         self.statusUpdated.emit("Measuring Capacity")
-        self.lockUI.emit(True)
+        self.lockUI.emit(False)
         self.axis.mode = "cap"
         # wait for the measurement to finish
         time.sleep(1)
@@ -62,10 +61,15 @@ class OpenLoopController(QRunnable):
 
         capacity = self.axis.capacity
 
+        self.axis.mode = "gnd"
         logger.info(f"Measured capacity {capacity} nF")
         self.measuredCapacity.emit(capacity)
-        self.lockUI.emit(False)
+        self.lockUI.emit(True)
         self.statusUpdated.emit("Ready")
+
+    def set_value(self, value: float, name: str):
+        logger.debug(f"Set {name} to {value}")
+        setattr(self.axis, name, value)
 
     def step_axis(self, value: float, direction: str):
         logger.debug(f"Step {direction} by {value}")
@@ -97,6 +101,9 @@ class OpenLoopController(QRunnable):
 
 
 class OpenLoopWidget(QFrame):
+    updateValues = pyqtSignal()
+    stepAxis = pyqtSignal(float, str)
+
     def __init__(
         self,
         parent: QWidget = None,
@@ -131,6 +138,12 @@ class OpenLoopWidget(QFrame):
         else:
             self.controller = OpenLoopController(axis=axis)
 
+        self.controller_thread = QThread()
+        self.controller_thread.start()
+        self.controller.moveToThread(self.controller_thread)
+
+        self.controller.lockUI.connect(self.toggle_activation)
+
         self.initUI()
 
         self.controller.statusUpdated.connect(self.control_bar.status_label.setText)
@@ -140,6 +153,9 @@ class OpenLoopWidget(QFrame):
         self.movable = False
 
         self.lock_button.clicked.connect(self.optimize_button.setEnabled)
+        self.control_bar.capacity_button.clicked.connect(
+            self.controller.measure_capacity
+        )
         self.controller.measuredCapacity.connect(
             lambda x: self.control_bar.capacity_button.setText(f"{int(x)} nF")
         )
@@ -218,21 +234,29 @@ class OpenLoopWidget(QFrame):
     def connect_axis(self, axis: Axis):
         self.controller.axis = axis
 
-        # self.voltage_widget.valueChanged.connect(
-        #     lambda value: setattr(self.axis, "voltage", value)
-        # )
-        # self.frequency_widget.valueChanged.connect(
-        #     lambda value: setattr(self.axis, "frequency", value)
-        # )
-        # self.offset_widget.valueChanged.connect(
-        #     lambda value: setattr(self.axis, "offset_voltage", value)
-        # )
-        # self.step_widget.valueChanged.connect(self.step_axis)
+        self.voltage_widget.valueChanged.connect(
+            lambda value: self.controller.set_value(value, "voltage")
+        )
+        self.frequency_widget.valueChanged.connect(
+            lambda value: self.controller.set_value(value, "frequency")
+        )
+        self.offset_widget.valueChanged.connect(
+            lambda value: self.controller.set_value(value, "offset_voltage")
+        )
+        self.step_widget.valueChanged.connect(self.controller.step_axis)
         #
-        # self.cmover_button.pressed.connect(lambda: self.step_axis(1, "up"))
-        # self.cmover_button.released.connect(lambda: self.step_axis(0, "up"))
-        # self.cmovel_button.pressed.connect(lambda: self.step_axis(1, "down"))
-        # self.cmovel_button.released.connect(lambda: self.step_axis(0, "down"))
+        self.cmover_button.pressed.connect(lambda: self.controller.step_axis(1, "up"))
+        self.cmover_button.released.connect(lambda: self.controller.step_axis(0, "up"))
+        self.cmovel_button.pressed.connect(lambda: self.controller.step_axis(1, "down"))
+        self.cmovel_button.released.connect(
+            lambda: self.controller.step_axis(0, "down")
+        )
+
+    def toggle_activation(self, toggle):
+        if toggle:
+            self.activate()
+        else:
+            self.deactivate()
 
     def activate(self):
         logger.debug(f"Activating {self.title}")
@@ -272,6 +296,6 @@ def main():
 
 
 if __name__ == "__main__":
-    # main()
-    test = OpenLoopController(axis=DummyOpenLoopAxis())
-    test.measure_capacity()
+    main()
+    # test = OpenLoopController(axis=DummyOpenLoopAxis())
+    # test.measure_capacity()
