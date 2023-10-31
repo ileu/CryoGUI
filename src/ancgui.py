@@ -3,7 +3,7 @@ import threading
 import time
 from typing import List
 
-from PyQt5.QtCore import pyqtSignal, QThread
+from PyQt5.QtCore import pyqtSignal, QThread, QObject
 from PyQt5.QtWidgets import (
     QApplication,
     QMainWindow,
@@ -27,6 +27,10 @@ from src.view import OpenLoopWidget
 import logging
 
 logger = logging.getLogger(__name__)
+
+
+class WorkerThread(QThread):
+    finished = pyqtSignal()
 
 
 class ANCGUI(InstrumentWidget):
@@ -97,6 +101,7 @@ class ANCGUI(InstrumentWidget):
         logger.info("Connected to ANC300")
         self.ancController = ancController
         self.statusUpdated.emit("Connected")
+
         for axis_widget in self.axis_widgets.values():
             axis_widget.connect_axis(getattr(ancController, axis_widget.title))
             axis_widget.activate()
@@ -117,10 +122,7 @@ def main():
     central_widget.setLayout(QHBoxLayout())
     v_layout = QVBoxLayout()
     connect_button = QPushButton("Connect")
-    connect_button.clicked.connect(lambda: connect_anc(gui))
-    anc_thread = QThread()
-
-    gui.moveToThread(anc_thread)
+    connect_button.clicked.connect(gui.connect_instrument)
 
     mode_button = QPushButton("Mode")
     # mode_button.clicked.connnect(lambda: gui.axis_widgets["RZ"].)

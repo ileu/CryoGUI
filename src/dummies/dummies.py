@@ -105,5 +105,11 @@ class DummyOpenLoopAxis:
         super().__setattr__(key, value)
 
     def ask(self, question):
+        logger.info(f"Asked this: {question}")
         if "c" in question:
             return self.capacity
+
+
+if __name__ == "__main__":
+    dolaxis = DummyOpenLoopAxis()
+    dolaxis.ask("Test")
