@@ -18,6 +18,8 @@ from onglabsuite.instruments.thorlabs.pm100d import PM100D
 from pymeasure.instruments.attocube import ANC300Controller
 from pyqtgraph import PlotWidget
 
+from src.measurement.step_measurement import StepMeasurement
+from src.measurement.step_optimization import OptimizationMeasurement
 from src.measurement.step_measurement import PowermeterMeasurement
 
 matplotlib.use("QtAgg")
@@ -174,7 +176,10 @@ def main():
     window = MeasurementApp()
 
     date = datetime.datetime.now().strftime("%Y%m%d")
-    filename = rf"C:\Users\ONG_C54_01\Documents\MeasurementData\Ueli\OptimizationMeasurement\log\{date}_step_measurement_.log"
+
+    filename = os.path.expanduser(
+        rf"\Documents\MeasurementData\Ueli\OptimizationMeasurement\log\{date}_step_measurement_.log"
+    )
     while os.path.exists(filename):
         if filename.split("_")[-2].isdigit():
             file_ext = int(filename.split("_")[-2]) + 1
@@ -199,7 +204,6 @@ def main():
     main_logger.addHandler(window_handler)
     main_logger.addHandler(file_handler)
     main_logger.setLevel(logging.DEBUG)
-    main_logger.info("Test")
 
     window.show()
     sys.exit(app.exec())

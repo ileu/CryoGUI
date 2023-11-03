@@ -87,8 +87,8 @@ class StepMeasurement(QObject):
         end_voltage = 16
         power_avg = 5
 
-        save_path = (
-            r"C:\Users\ONG_C54_01\Documents\MeasurementData\Ueli\StepMeasurementCold"
+        save_path = os.path.expanduser(
+            r"\Documents\MeasurementData\Ueli\StepMeasurementCold"
         )
 
         logger.info("Setting up devices")
@@ -158,20 +158,16 @@ class StepMeasurement(QObject):
                     logger.debug(f"waiting for {0.1} seconds")
                     time.sleep(0.1)
                     i += 1
-                    if direction == 1:
-                        logger.debug(f"measuring power")
-                        for n in range(power_avg):
-                            try:
-                                p = pm.power_W
-                                logger.debug("after measure")
-                                powers.append(p)
-                                logger.debug("after append")
-                                time.sleep(0.1)
-                            except Exception as e:
-                                logger.error(f"Error: {e}")
-                    else:
-                        powers = np.array([pm.power_W] * power_avg)
-                        logger.debug("Backwards power measurement")
+                    logger.debug(f"measuring power")
+                    for n in range(power_avg):
+                        try:
+                            p = pm.power_W
+                            logger.debug("after measure")
+                            powers.append(p)
+                            logger.debug("after append")
+                            time.sleep(0.1)
+                        except Exception as e:
+                            logger.error(f"Error: {e}")
                     power = np.nanmean(powers)
                     logger.debug(f"power is {power}")
 
@@ -185,12 +181,19 @@ class StepMeasurement(QObject):
                             logger.debug(f"peak detected")
                             peak = True
 
-                    if direction == 1:
-                        logger.debug(f"writing to file")
+                    logger.debug(f"writing to file")
 
-                        self.newDataPoint.emit(power)
+                    self.newDataPoint.emit(power)
+                    if direction == 1:
                         with open(
                             filename,
+                            "a",
+                        ) as f:
+                            f.write(f"{i}, step, {power}, watt, {peak}\n")
+                            f.flush()
+                    else:
+                        with open(
+                            filename + ".back",
                             "a",
                         ) as f:
                             f.write(f"{i}, step, {power}, watt, {peak}\n")
