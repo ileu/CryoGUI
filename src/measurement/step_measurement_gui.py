@@ -12,14 +12,13 @@ from PyQt5.QtWidgets import (
     QWidget,
     QPushButton,
     QTextEdit,
+    QFrame,
 )
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.figure import Figure
 from onglabsuite.instruments.thorlabs.pm100d import PM100D
 from pymeasure.instruments.attocube import ANC300Controller
+from pyqtgraph import PlotWidget
 
-from src.measurement.step_measurement import StepMeasurement
-from src.measurement.step_optimization import OptimizationMeasurement
+from src.measurement.step_measurement import PowermeterMeasurement
 
 matplotlib.use("QtAgg")
 
@@ -67,7 +66,8 @@ class MeasurementApp(QMainWindow):
         self.stop_button.clicked.connect(self.stop_experiment)
         self.stop_button.setEnabled(False)
 
-        self.canvas = RealTimePlotCanvas(self, width=5, height=4)
+        self.canvas = PlotWidget(title="SHOW ME THE POWAAA")
+
         self.layout.addWidget(self.canvas)
 
         self.log_text = QTextEdit(self)
@@ -80,8 +80,10 @@ class MeasurementApp(QMainWindow):
         self.plot_button.clicked.connect(self.start_measurement)
 
         self.thread: QThread = None
-        self.experiment: StepMeasurement = None
+        self.experiment = None
         self.data = []
+        self.plot_item = None
+        logger.info("SETUP")
 
         # self.timer = QTimer(self)
         # self.timer.timeout.connect(self.update_plot)
@@ -108,7 +110,8 @@ class MeasurementApp(QMainWindow):
             passwd="123456",
         )
         logger.info("ANC300 connected")
-        powermeter = PM100D("USB0::0x1313::0x8078::P0024405::INSTR")
+        # powermeter = PM100D("USB0::0x1313::0x8078::P0024405::INSTR")
+        powermeter = PM100D("USB0::0x1313::0x8072::1916143::INSTR")
         devices = {"anc300": controller, "pm": powermeter}
         logger.info("Powermeter connected")
         logger.info("Setup Thread")
@@ -116,7 +119,8 @@ class MeasurementApp(QMainWindow):
         self.thread = QThread()
         logger.debug("Thread created")
         # create the experiment
-        self.experiment = OptimizationMeasurement(devices)
+        print(devices)
+        self.experiment = PowermeterMeasurement(devices)
         logger.debug("Experiment created")
         # move experiment to thread
         self.experiment.moveToThread(self.thread)
@@ -143,23 +147,26 @@ class MeasurementApp(QMainWindow):
         self.data.append(new_data_point)
         if len(self.data) > 200:
             self.data = self.data[-200:]
-        self.canvas.update_plot(self.data)
+        if self.plot_item is None:
+            self.plot_item = self.canvas.plot(self.data)
+        else:
+            self.plot_item.setData(self.data)
 
 
-class RealTimePlotCanvas(FigureCanvas):
-    def __init__(self, parent=None, width=5, height=4, dpi=100):
-        fig = Figure(figsize=(width, height), dpi=dpi)
-        self.axes = fig.add_subplot(111)
-        super().__init__(fig)
-        self.setParent(parent)
-
-    def update_plot(self, data):
-        self.axes.clear()
-        self.axes.plot(data)
-        self.axes.set_xlabel("Time")
-        self.axes.set_ylabel("Measurement Data")
-        self.axes.grid(True)
-        self.draw()
+# class RealTimePlotCanvas(FigureCanvas):
+#     def __init__(self, parent=None, width=5, height=4, dpi=100):
+#         fig = Figure(figsize=(width, height), dpi=dpi)
+#         self.axes = fig.add_subplot(111)
+#         super().__init__(fig)
+#         self.setParent(parent)
+#
+#     def update_plot(self, data):
+#         self.axes.clear()
+#         self.axes.plot(data)
+#         self.axes.set_xlabel("Time")
+#         self.axes.set_ylabel("Measurement Data")
+#         self.axes.grid(True)
+#         self.draw()
 
 
 def main():
@@ -188,9 +195,11 @@ def main():
     window_handler.setLevel(logging.INFO)
 
     main_logger = logging.getLogger()
+    main_logger.addHandler(logging.StreamHandler())
     main_logger.addHandler(window_handler)
     main_logger.addHandler(file_handler)
     main_logger.setLevel(logging.DEBUG)
+    main_logger.info("Test")
 
     window.show()
     sys.exit(app.exec())
