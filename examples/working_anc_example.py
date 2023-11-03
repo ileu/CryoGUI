@@ -1,3 +1,5 @@
+import time
+
 import pymeasure
 from pymeasure.instruments.attocube import ANC300Controller
 
@@ -14,6 +16,11 @@ controller = ANC300Controller(
 for axis in axis_names:
     ax = getattr(controller, axis)
     print(ax.frequency)
+
+controller.LX.mode = "stp"
+controller.LX.stepu = 1
+time.sleep(0.05)
+controller.LX.stepd = 1
 
 print(controller.version)
 controller.ground_all()

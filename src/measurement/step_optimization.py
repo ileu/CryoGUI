@@ -1,3 +1,4 @@
+import os.path
 import time
 
 import numpy as np
@@ -10,6 +11,7 @@ import logging
 from pymeasure.instruments.attocube.anc300 import Axis
 
 logger = logging.getLogger(__name__)
+print(__name__)
 
 
 class OptimizationMeasurement(QObject):
@@ -51,15 +53,16 @@ class OptimizationMeasurement(QObject):
 
         coarse_voltage = 24  # volt
         fine_voltage = 20  # volt
-        frequency = 10  # Hz
+        frequency = 100  # Hz
         slope_stepping = 10
         max_steps = 50
         power_avg = 5
 
-        powers = np.empty((power_avg, 1))
+        powers = []
+        max_power = 0
 
-        save_path = (
-            r"C:\Users\ONG_C54_01\Documents\MeasurementData\Ueli\StepOptimization"
+        save_path = os.path.expanduser(
+            r"~\Documents\MeasurementData\Ueli\StepOptimization"
         )
 
         logger.info("Setting up devices")
@@ -67,7 +70,7 @@ class OptimizationMeasurement(QObject):
         anc300.stop_all()
         anc300.ground_all()
 
-        axis: Axis = anc300.RX
+        axis: Axis = anc300.LY
 
         axis.mode = "stp+"
 
@@ -76,20 +79,20 @@ class OptimizationMeasurement(QObject):
         # setup
         logger.info("Starting loop")
         try:
-            powers = []
+            logger.debug("Looking for slope")
             axis.voltage = coarse_voltage
             axis.frequency = frequency
-
-            # look if there is a slope
-            logger.debug("Looking for slope")
             for i in range(slope_stepping):
                 axis.stepu = 1
                 time.sleep(0.25)
                 try:
                     powers.append(pm.power_W)
+                    self.newDataPoint.emit(powers[-1])
                 except Exception as e:
                     logger.warning(f"Error reading powermeter: {e}")
-                    i -= 1
+                    i -= 2
+                if i < 0:
+                    raise RuntimeError("No powermeter reading")
 
             check_slope_pos = np.all(np.diff(powers) > 0)
             check_slope_neg = np.all(np.diff(powers) < 0)
@@ -98,12 +101,72 @@ class OptimizationMeasurement(QObject):
 
             if check_slope_pos:
                 logger.info("Found positive slope")
-                slope = 1
+                slope = -1
             elif check_slope_neg:
                 logger.info("Found negative slope")
-                slope = -1
+                slope = 1
             else:
                 logger.info("No slope found")
+                raise RuntimeError("No slope found")
+
+            time.sleep(2)
+            # find peak
+            logger.info("Finding peak")
+            for voltage in [25, 22, 20, 18, 16]:
+                powers = []
+                axis.voltage = voltage
+                axis.frequency = frequency
+
+                time.sleep(0.1)
+
+                logger.info(f"setting voltage to {voltage}")
+
+                # step in reverse direction to slope
+                for i in range(max_steps):
+                    power = 0
+                    logger.info(f"SLOPE: {slope}")
+                    if slope == -1:
+                        axis.stepu = 1
+                    else:
+                        axis.stepd = 1
+                    logger.debug(f"waiting for {0.05} seconds")
+                    time.sleep(0.1)
+                    while power == 0:
+                        try:
+                            power = pm.power_W
+                        except Exception as e:
+                            logger.error(f"Error reading powermeter: {e}")
+                            power = 0
+                            time.sleep(0.1)
+                    powers.append(power)
+                    self.newDataPoint.emit(power)
+                    if power > max_power:
+                        max_power = power
+
+                    # check if slope has changed
+                    if len(powers) > 2:
+                        check_slope = np.all(np.diff(powers[-5:]) < 0)
+                    else:
+                        check_slope = False
+
+                    if check_slope:
+                        logger.warning("Slope changed")
+                        slope = -slope
+                        break
+                else:
+                    logger.error("RAN OUT OF STEPS ")
+                    break
+            time.sleep(1)
+            if slope == 1:
+                axis.stepu = 3
+            else:
+                axis.stepd = 3
+            logger.info("Found peak")
+            print(max_power)
+            peak_power = pm.power_W
+            logger.info(f"Peak power: {peak_power}")
+            self.newDataPoint.emit(peak_power)
+
         except Exception as e:
             logger.warning(f"Error optimizing axis: {e}")
         finally:

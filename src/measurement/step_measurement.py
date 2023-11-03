@@ -11,7 +11,7 @@ import logging
 
 from pymeasure.instruments.attocube.anc300 import Axis
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("src.measurement.step_optimization")
 
 
 class PowermeterMeasurement(QObject):
@@ -88,7 +88,7 @@ class StepMeasurement(QObject):
         power_avg = 5
 
         save_path = os.path.expanduser(
-            r"\Documents\MeasurementData\Ueli\StepMeasurementCold"
+            r"~\Documents\MeasurementData\Ueli\StepMeasurementCold"
         )
 
         logger.info("Setting up devices")
@@ -96,7 +96,7 @@ class StepMeasurement(QObject):
         anc300.stop_all()
         anc300.ground_all()
 
-        axis: Axis = anc300.RY
+        axis: Axis = anc300.LY
 
         axis.mode = "stp"
 
@@ -107,7 +107,7 @@ class StepMeasurement(QObject):
         try:
             for voltage in range(
                 45,
-                38,
+                30,
                 -1,
             ):
                 # for rep, voltage in enumerate([starting_voltage] * 6):
@@ -128,7 +128,7 @@ class StepMeasurement(QObject):
                 date = datetime.datetime.now().strftime("%Y%m%d")
                 filename = (
                     save_path
-                    + rf"\{date}_axis-RY_15K_rep-{rep}_voltage-{voltage}_frequency-{frequency}_.csv"
+                    + rf"\{date}_axis-LY_15K_rep-{rep}_voltage-{voltage}_frequency-{frequency}_.csv"
                 )
                 while os.path.exists(filename):
                     if filename.split("_")[-2].isdigit():

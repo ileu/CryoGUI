@@ -119,21 +119,20 @@ class MeasurementApp(QMainWindow):
         logger.info("Setup Thread")
         # create a thread
         self.thread = QThread()
-        logger.debug("Thread created")
+        logger.info("Thread created")
         # create the experiment
-        print(devices)
-        self.experiment = PowermeterMeasurement(devices)
-        logger.debug("Experiment created")
+        self.experiment = OptimizationMeasurement(devices)
+        logger.info("Experiment created")
         # move experiment to thread
         self.experiment.moveToThread(self.thread)
-        logger.debug("Experiment moved to thread")
+        logger.info("Experiment moved to thread")
         # connecting signals
         self.thread.started.connect(self.experiment.measure)
         self.experiment.newDataPoint.connect(self.update_plot)
         self.experiment.measurementFinished.connect(self.switch_start)
         self.thread.finished.connect(self.thread.deleteLater)
         self.experiment.measurementFinished.connect(self.experiment.deleteLater)
-        logger.debug("Signals connected")
+        logger.info("Signals connected")
 
         # start the thread
         logger.info("measurement started")
@@ -172,14 +171,13 @@ class MeasurementApp(QMainWindow):
 
 
 def main():
+    date = datetime.datetime.now().strftime("%Y%m%d")
+    filename = os.path.expanduser(
+        rf"~\Documents\MeasurementData\Ueli\OptimizationMeasurement\log\{date}_step_measurement_.log"
+    )
     app = QApplication(sys.argv)
     window = MeasurementApp()
 
-    date = datetime.datetime.now().strftime("%Y%m%d")
-
-    filename = os.path.expanduser(
-        rf"\Documents\MeasurementData\Ueli\OptimizationMeasurement\log\{date}_step_measurement_.log"
-    )
     while os.path.exists(filename):
         if filename.split("_")[-2].isdigit():
             file_ext = int(filename.split("_")[-2]) + 1
