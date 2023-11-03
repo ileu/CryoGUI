@@ -4,7 +4,7 @@ import random
 import sys
 import time
 
-from PyQt5 import QtWidgets
+from PyQt5 import QtWidgets, Qt, QtCore
 from PyQt5.QtCore import QTimer, QThread, pyqtSignal
 from PyQt5.QtGui import QIntValidator
 from PyQt5.QtSerialPort import QSerialPortInfo
@@ -21,6 +21,7 @@ from PyQt5.QtWidgets import (
     QLineEdit,
     QHBoxLayout,
     QSpacerItem,
+    QVBoxLayout,
 )
 
 from pyqtgraph import PlotWidget
@@ -46,7 +47,7 @@ class Messenger(QThread):
         # self.device
 
 
-class CryoWidget(QMainWindow):
+class CryoWidget(QWidget):
     updatedData = pyqtSignal(list)
     updatedUserTemperature = pyqtSignal(float)
 
@@ -72,9 +73,10 @@ class CryoWidget(QMainWindow):
         self.heater_power_canvas = PlotWidget(title="Heater Power")
         self.turbo_pump_canvas = PlotWidget(title="Turbo Pump Frequency")
 
-        self.user_temperature = 4
+        self.logging_timer = QTimer()
+        self.logging_timer.timeout.connect(self.get_values)
 
-        self.canvases = [
+        self.canvases: list[PlotWidget] = [
             self.stage_temp_canvas,
             self.stage_pressure_canvas,
             self.cold_temp_canvas,
@@ -99,6 +101,7 @@ class CryoWidget(QMainWindow):
         ]
 
         self.data = [[] for i in range(5)]
+        self.user_temperature = 4
 
         self.init_ui()
 
@@ -115,20 +118,13 @@ class CryoWidget(QMainWindow):
         # self.log_file = None
 
     def init_ui(self):
-        self.central_widget = QWidget(self)
-        self.setCentralWidget(self.central_widget)
-        self.layout = QGridLayout()
-        # self.layout.setContentsMargins(0, 0, 0, 0)
+        main_layout = QVBoxLayout()
+        self.setLayout(main_layout)
 
-        self.central_widget.setLayout(self.layout)
-
-        port_label = QLabel("Port")
+        setup_layout = QGridLayout()
         ports = [port for port in QSerialPortInfo.availablePorts()]
 
         self.port_combo.addItems([port.portName() for port in ports])
-
-        self.logging_timer = QTimer()
-        self.logging_timer.timeout.connect(self.get_values)
 
         self.logging_interval_edit = QLineEdit("1000")
         self.logging_interval_edit.setToolTip("Needs to be bigger than 100ms")
@@ -163,81 +159,88 @@ class CryoWidget(QMainWindow):
         self.disconnect_button.setEnabled(False)
         self.disconnect_button.clicked.connect(self.disconnect_controller)
 
-        self.action_monitor.setReadOnly(True)
-        # self.layout.setColumnStretch()
+        setup_layout.addWidget(QLabel("Serial Port"), 0, 0)
+        setup_layout.addWidget(self.port_combo, 0, 1)
+        setup_layout.addWidget(self.connect_button, 0, 3)
+        setup_layout.addWidget(self.disconnect_button, 0, 4)
 
-        self.horizontalLayout_3 = QHBoxLayout()
-        spacerItem = QSpacerItem(
-            40,
-            20,
-            QtWidgets.QSizePolicy.Policy.Expanding,
-            QtWidgets.QSizePolicy.Policy.Minimum,
+        setup_layout.addWidget(self.file_locator, 1, 0, 1, 4)
+        setup_layout.addWidget(self.log_file_browse, 1, 4)
+
+        setup_layout.addWidget(QLabel("Logging Interval (ms)"), 2, 2)
+        setup_layout.addWidget(
+            self.logging_interval_edit,
+            2,
+            3,
+            1,
+            1,
         )
-        self.horizontalLayout_3.addItem(spacerItem)
-        self.pushButton_3 = QPushButton("Confirm")
-        self.pushButton_3.clicked.connect(self.attodry_controller.Confirm)
-        self.horizontalLayout_3.addWidget(self.pushButton_3)
-        spacerItem1 = QSpacerItem(
-            40,
-            20,
-            QtWidgets.QSizePolicy.Policy.Expanding,
-            QtWidgets.QSizePolicy.Policy.Minimum,
+
+        # main_layout.addLayout(setup_layout)
+        self.action_monitor.setReadOnly(True)
+
+        controller_layout = QGridLayout()
+        self.base_temperature_button = QPushButton("Base Temperature")
+        self.base_temperature_button.clicked.connect(
+            self.attodry_controller.goToBaseTemperature
         )
-        self.horizontalLayout_3.addItem(spacerItem1)
-        self.pushButton_2 = QPushButton("Cancel")
-        self.pushButton_2.clicked.connect(self.attodry_controller.Cancel)
-        self.horizontalLayout_3.addWidget(self.pushButton_2)
-        spacerItem2 = QSpacerItem(
-            40,
-            20,
-            QtWidgets.QSizePolicy.Policy.Expanding,
-            QtWidgets.QSizePolicy.Policy.Minimum,
-        )
-        self.horizontalLayout_3.addItem(spacerItem2)
-        self.layout.addLayout(self.horizontalLayout_3, 0, 7, 1, 1)
-        self.pushButton_5 = QPushButton("Activate Temperature control")
-        self.layout.addWidget(self.pushButton_5, 2, 5, 1, 1)
-        self.horizontalLayout = QHBoxLayout()
-        self.pushButton_6 = QPushButton("Set PID")
-        self.horizontalLayout.addWidget(self.pushButton_6)
-        self.lineEdit_2 = QLineEdit(self)
-        self.updatedUserTemperature.connect(lambda x: self.lineEdit_2.setText(str(x)))
-        self.horizontalLayout.addWidget(self.lineEdit_2)
-        self.lineEdit_3 = QLineEdit(self)
-        self.horizontalLayout.addWidget(self.lineEdit_3)
-        self.lineEdit_4 = QLineEdit(self)
-        self.horizontalLayout.addWidget(self.lineEdit_4)
-        self.layout.addLayout(self.horizontalLayout, 2, 7, 1, 1)
-        self.pushButton_4 = QPushButton("Heat Up")
-        self.pushButton_4.clicked.connect(self.attodry_controller.startSampleExchange)
-        self.layout.addWidget(self.pushButton_4, 1, 5, 1, 1)
-        self.lineEdit = QLineEdit(self)
-        self.layout.addWidget(self.lineEdit, 2, 6, 1, 1)
-        self.pushButton = QPushButton("Base Temperature")
-        self.pushButton.clicked.connect(self.attodry_controller.goToBaseTemperature)
-        self.layout.addWidget(self.pushButton, 0, 5, 1, 1)
-        self.pushButton_7 = QPushButton("Break Sample Valve")
-        self.layout.addWidget(self.pushButton_7, 1, 8, 1, 1)
-        # self.pushButton_7.clicked.connect(
+        controller_layout.addWidget(self.base_temperature_button, 0, 0)
+
+        self.heat_up_button = QPushButton("Heat Up")
+        # self.heat_up_button.clicked.connect(self.attodry_controller.startSampleExchange)
+        controller_layout.addWidget(self.heat_up_button, 1, 0)
+
+        self.temperature_control_button = QPushButton("Activate Temperature control")
+        controller_layout.addWidget(self.temperature_control_button, 2, 0)
+
+        self.user_temperature_edit = QLineEdit()
+        self.user_temperature_edit.setText(str(self.user_temperature))
+        controller_layout.addWidget(self.user_temperature_edit, 2, 1)
+
+        self.set_pid_button = QPushButton("Set PID")
+        controller_layout.addWidget(self.set_pid_button, 2, 2)
+
+        self.p_edit = QLineEdit()
+        controller_layout.addWidget(self.p_edit, 2, 3)
+
+        self.i_edit = QLineEdit()
+        controller_layout.addWidget(self.i_edit, 2, 4)
+
+        self.d_edit = QLineEdit()
+        # controller_layout.addWidget(self.d_edit, 2, 5)
+
+        self.break_valve_button = QPushButton("Break Sample Valve")
+        # self.break_valve_button.clicked.connect(
         #     self.attodry_controller.toggleBreakVac800Valve
         # )
-        self.pushButton_7.setCheckable(True)
+        # controller_layout.addWidget(self.break_valve_button, 0, 6)
 
-        self.layout.addWidget(port_label, 0, 0)
-        self.layout.addWidget(self.port_combo, 0, 1)
-        self.layout.addItem(spacerItem, 0, 2)
-        self.layout.addWidget(self.connect_button, 0, 3)
-        self.layout.addWidget(self.disconnect_button, 0, 4)
-        self.layout.addWidget(self.file_locator, 1, 0, 1, 4)
-        self.layout.addWidget(self.log_file_browse, 1, 4)
-        self.layout.addWidget(QLabel("Logging Interval (ms)"), 2, 1)
-        self.layout.addWidget(self.logging_interval_edit, 2, 2)
-        self.layout.addWidget(self.stage_temp_canvas, 3, 0, 1, 5)
-        self.layout.addWidget(self.stage_pressure_canvas, 4, 0, 1, 5)
-        self.layout.addWidget(self.turbo_pump_canvas, 5, 0, 1, 5)
-        self.layout.addWidget(self.cold_temp_canvas, 3, 5, 1, 5)
-        self.layout.addWidget(self.heater_power_canvas, 4, 5, 1, 5)
-        self.layout.addWidget(self.action_monitor, 5, 5, 1, 5)
+        self.confirm_button = QPushButton("Confirm")
+        # self.confirm_button.clicked.connect(self.attodry_controller.Confirm)
+        controller_layout.addWidget(self.confirm_button, 0, 3)
+
+        self.cancel_button = QPushButton("Cancel")
+        # self.cancel_button.clicked.connect(self.attodry_controller.Cancel)
+        controller_layout.addWidget(self.cancel_button, 0, 4)
+
+        plot_layout = QGridLayout()
+
+        plot_layout.addWidget(self.stage_temp_canvas, 0, 0)
+        plot_layout.addWidget(self.stage_pressure_canvas, 1, 0)
+        plot_layout.addWidget(self.turbo_pump_canvas, 2, 0)
+
+        plot_layout.addWidget(self.cold_temp_canvas, 0, 1)
+        plot_layout.addWidget(self.heater_power_canvas, 1, 1)
+        plot_layout.addWidget(self.action_monitor, 2, 1)
+
+        control_layout = QHBoxLayout()
+
+        control_layout.addLayout(setup_layout)
+        # control_layout.addStretch()
+        control_layout.addLayout(controller_layout)
+
+        main_layout.addLayout(control_layout)
+        main_layout.addLayout(plot_layout)
 
         for i, plot_widget in enumerate(self.canvases):
             plot_widget.showGrid(x=True, y=True, alpha=0.5)
@@ -247,8 +250,19 @@ class CryoWidget(QMainWindow):
             )
             plot_widget.getAxis("bottom").setPen(pg.mkPen(color="k"))
             plot_widget.getAxis("left").setPen(pg.mkPen(color="k"))
+            plot_widget.showAxis("right")
+            plot_widget.getAxis("right").setStyle(showValues=False)
+            plot_widget.getAxis("right").setPen(pg.mkPen(color="k"))
+            plot_widget.showAxis("top")
+            plot_widget.getAxis("top").setStyle(showValues=False)
+            plot_widget.getAxis("top").setPen(pg.mkPen(color="k"))
             plot_widget.setBackground("w")  # White background
-            plot_widget.setXRange(0, 1)
+            plot_widget.getPlotItem().setContentsMargins(5, 5, 25, 5)
+            plot_widget.setStyleSheet(
+                "border: 2px solid gray; border-radius: 10px; padding: 5px"
+            )
+            if i != 0:
+                plot_widget.setXLink(self.canvases[0])
 
     def logging_manager(self, running: bool = False):
         if running:
@@ -273,9 +287,8 @@ class CryoWidget(QMainWindow):
                         filename,
                         "a",
                     ) as f:
-                        f.write(",".join(self.data_titles) + "\n")
+                        f.write("time," + ",".join(self.data_titles) + "\n")
                         f.flush()
-
                 self.log_file_browse.setText("Stop Logging")
                 self.log_file_location = filename
                 self.logging_timer.start(1000)
@@ -382,7 +395,9 @@ class CryoWidget(QMainWindow):
             self.log_file_location,
             "a",
         ) as f:
-            f.write(",".join(map(str, new_data_points)) + "\n")
+            line = str(time.time())
+            line += ",".join(map(str, new_data_points))
+            f.write(line + "\n")
             f.flush()
 
 

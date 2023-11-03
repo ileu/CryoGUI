@@ -1,7 +1,11 @@
 import os
 import sys
 
+import onglabsuite
 from PyQt5 import QtWidgets, QtCore
+from onglabsuite.instruments.keysight.n7744c import N7744C
+from onglabsuite.instruments.keysight.n7776c import N7776C
+from onglabsuite.instruments.thorlabs.pm100d import PM100D
 from onglabsuite.interfaces._windows import WindowSidebarTabs
 from onglabsuite.interfaces.smaract_setup.widgets.InstrumentConnection import (
     InstrumentConnectionWidget,
@@ -13,10 +17,13 @@ from onglabsuite.interfaces.smaract_setup.widgets.LaserScanning import (
     LaserScanningWidget,
 )
 import pyqtgraph as pg
+from pymeasure.instruments.attocube import ANC300Controller
 from pyqtgraph import PlotWidget
 
 from src.amcgui import AMCGUI
 from src.ancgui import ANCGUI
+from src.controller import AMC300Controller
+from src.couplingwidget import CouplingWidget
 from src.cryogui import CryoWidget
 
 
@@ -26,9 +33,17 @@ class CryoSetup(WindowSidebarTabs):
         self.show()
 
         ui_path = os.path.dirname(os.path.abspath(__file__))
-        list_path = os.path.join(ui_path, "INSTRUMENT_LIST.txt")
+        list_path = os.path.join(ui_path, "view/INSTRUMENT_LIST.txt")
 
         self.inst_connection = InstrumentConnectionWidget(list_path, parent=self)
+        self.inst_connection.instrument_classes = {
+            "PM100D": PM100D,
+            "N7744C": N7744C,
+            "N7776C": N7776C,
+            "ANC300Controller": ANC300Controller,
+            "AMC300Controller": AMC300Controller,
+        }
+        self.inst_connection.InstrumentConnected.connect(self.instrument_connected)
         self.inst_control = InstrumentControlWidget(parent=self)
 
         # self.inst_connection.InstrumentConnected.connect(self.instrument_connected)
@@ -46,40 +61,10 @@ class CryoSetup(WindowSidebarTabs):
         self.tab.setLayout(tab1_layout)
         self.tabWidget.setTabText(0, "Cryo Control")
 
-        self.amc_widget = AMCGUI(parent=self)
-        self.anc_widget = ANCGUI(parent=self)
-        self.power_frame = QtWidgets.QFrame()
-        self.power_frame.setStyleSheet("border: 1px solid lightgray;")
-        self.power_plot = PlotWidget(
-            title="SHOW ME THE POWAAA", parent=self.power_frame
-        )
-        self.power_plot.setYRange(-1, 1)
-        self.power_plot.showGrid(x=True, y=True, alpha=0.5)
-        self.power_plot.getAxis("bottom").setLabel("Time", units="s")
-        self.power_plot.getAxis("left").setLabel("POWER", units="W")
-        self.power_plot.getAxis("bottom").setPen(pg.mkPen(color="k"))
-        self.power_plot.getAxis("left").setPen(pg.mkPen(color="k"))
-        self.power_plot.showAxis("right")
-        self.power_plot.getAxis("right").setStyle(showValues=False)
-        self.power_plot.getAxis("right").setPen(pg.mkPen(color="k"))
-        self.power_plot.showAxis("top")
-        self.power_plot.getAxis("top").setStyle(showValues=False)
-        self.power_plot.getAxis("top").setPen(pg.mkPen(color="k"))
-        self.power_plot.setBackground("w")
-        self.power_plot.setXRange(0, 1)
-        t_layout = QtWidgets.QVBoxLayout()
-        t_layout.setContentsMargins(0, 0, 0, 0)
-        # t_layout.addWidget()
-        self.power_frame.setLayout(t_layout)
-        stage_layout = QtWidgets.QGridLayout()
-        stage_layout.addWidget(self.anc_widget, 0, 0, 2, 1)
-        stage_layout.addWidget(self.power_plot, 0, 1, 1, 1)
-        stage_layout.addWidget(self.amc_widget, 1, 1, 1, 1)
-        self.stage_widget = QtWidgets.QWidget()
-        self.stage_widget.setLayout(stage_layout)
-        self.tab2_layout = QtWidgets.QVBoxLayout()
-        self.tab2_layout.addWidget(self.stage_widget)
-        self.tab_2.setLayout(self.tab2_layout)
+        self.stage_widget = CouplingWidget()
+        tab2_layout = QtWidgets.QVBoxLayout()
+        tab2_layout.addWidget(self.stage_widget)
+        self.tab_2.setLayout(tab2_layout)
         self.tabWidget.setTabText(1, "Stage Control")
 
         self.laser_scanner = LaserScanningWidget(parent=self)
@@ -96,52 +81,36 @@ class CryoSetup(WindowSidebarTabs):
 
         self.tabWidget.setCurrentIndex(0)
 
+    def keyPressEvent(self, event):
+        print(event.key())
+        super().keyPressEvent(event)
+
+    def keyReleaseEvent(self, event):
+        print(event.key())
+        super().keyReleaseEvent(event)
+
     def instrument_connected(self, inst):
         self.inst_control.add_instrument_tab(inst)
         for tab in self.tabs:
             if type(inst).__name__ in self.tab.PM_ALLOWED:
-                self.tab1.boxPMChoice.addItems([inst.name + " (" + inst.address + ")"])
-                self.tab1.boxPMChoice.adjustSize()
-                if not self.tab1.pm:
-                    self.tab1.connect_pm(inst)
-                    self.tab1.boxPMChoice.setCurrentIndex(
-                        self.tab1.boxPMChoice.findText(
+                self.tab.boxPMChoice.addItems([inst.name + " (" + inst.address + ")"])
+                self.tab.boxPMChoice.adjustSize()
+                if not self.tab.pm:
+                    self.tab.connect_pm(inst)
+                    self.tab.boxPMChoice.setCurrentIndex(
+                        self.tab.boxPMChoice.findText(
                             inst.name + " (" + inst.address + ")"
                         )
                     )
             if type(inst).__name__ in self.tab.SAMPLE_ALLOWED:
-                self.tab1.boxSampleChoice.addItems(
+                self.tab.boxSampleChoice.addItems(
                     [inst.name + " (" + inst.address + ")"]
                 )
-                self.tab1.boxSampleChoice.adjustSize()
-                if not self.tab1.samplestage:
-                    self.tab1.connect_samplestage(inst)
-                    self.tab1.boxSampleChoice.setCurrentIndex(
-                        self.tab1.boxSampleChoice.findText(
-                            inst.name + " (" + inst.address + ")"
-                        )
-                    )
-            if type(inst).__name__ in self.tab.INPUT_ALLOWED:
-                self.tab1.boxInputChoice.addItems(
-                    [inst.name + " (" + inst.address + ")"]
-                )
-                self.tab1.boxInputChoice.adjustSize()
-                if not self.tab1.inputstage:
-                    self.tab1.connect_inputstage(inst)
-                    self.tab1.boxInputChoice.setCurrentIndex(
-                        self.tab1.boxInputChoice.findText(
-                            inst.name + " (" + inst.address + ")"
-                        )
-                    )
-            if type(inst).__name__ in self.tab.OUTPUT_ALLOWED:
-                self.tab1.boxOutputChoice.addItems(
-                    [inst.name + " (" + inst.address + ")"]
-                )
-                self.tab1.boxOutputChoice.adjustSize()
-                if not self.tab1.outputstage and not inst == self.tab1.inputstage:
-                    self.tab1.connect_outputstage(inst)
-                    self.tab1.boxOutputChoice.setCurrentIndex(
-                        self.tab1.boxOutputChoice.findText(
+                self.tab.boxSampleChoice.adjustSize()
+                if not self.tab.samplestage:
+                    self.tab.connect_samplestage(inst)
+                    self.tab.boxSampleChoice.setCurrentIndex(
+                        self.tab.boxSampleChoice.findText(
                             inst.name + " (" + inst.address + ")"
                         )
                     )

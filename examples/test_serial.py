@@ -1,4 +1,4 @@
-from PyQt6 import QtCore, QtWidgets, QtSerialPort
+from PyQt5 import QtCore, QtWidgets, QtSerialPort
 
 
 class Widget(QtWidgets.QWidget):
@@ -18,15 +18,21 @@ class Widget(QtWidgets.QWidget):
         lay.addWidget(self.button)
 
         self.ports = QtSerialPort.QSerialPortInfo.availablePorts()
-        print(self.ports[2].systemLocation())
-        self.serial = QtSerialPort.QSerialPort(self.ports[2])
-        self.serial.readyRead.connect(self.receive)
+        self.setFocusPolicy(QtCore.Qt.FocusPolicy.StrongFocus)
+        # self.serial = QtSerialPort.QSerialPort(self.ports[2])
+        # self.serial.readyRead.connect(self.receive)
+
+    def keyPressEvent(self, event):
+        print("Press: ", event.key())
+
+    def keyReleaseEvent(self, event):
+        print("Release", event.key())
 
     @QtCore.pyqtSlot()
     def receive(self):
         while self.serial.canReadLine():
             text = self.serial.readLine().data().decode()
-            text = text.rstrip('\r\n')
+            text = text.rstrip("\r\n")
             self.output_te.append(text)
 
     @QtCore.pyqtSlot()
@@ -44,7 +50,7 @@ class Widget(QtWidgets.QWidget):
             self.serial.close()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import sys
 
     app = QtWidgets.QApplication(sys.argv)

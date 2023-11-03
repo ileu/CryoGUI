@@ -3,7 +3,7 @@ import threading
 import time
 from typing import List
 
-from PyQt5.QtCore import pyqtSignal, QThread, QObject
+from PyQt5.QtCore import pyqtSignal, QThread, QObject, QTimer
 from PyQt5.QtWidgets import (
     QApplication,
     QMainWindow,
@@ -64,10 +64,14 @@ class ANCGUI(InstrumentWidget):
 
         mainLayout.addWidget(self.status_label)
         self.setLayout(mainLayout)
+        self.refresh_timer = QTimer()
+        self.refresh_timer.setInterval(500)
+        self.refresh_timer.timeout.connect(self.refresh)
 
     def refresh(self):
         for ax_wid in self.axis_widgets.values():
-            ax_wid.update()
+            ax_wid.controller.update_values()
+            ax_wid.controller.update_mode()
 
     def connect_instrument(
         self, address: str = None, axis: list = None, passwd: str = "123456"

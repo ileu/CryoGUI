@@ -1,3 +1,4 @@
+import datetime
 import sys
 import random
 import logging
@@ -11,6 +12,7 @@ from PyQt5.QtWidgets import (
     QTextEdit,
 )
 import pyqtgraph as pg
+from pyqtgraph import DateAxisItem
 
 
 class QTextEditHandler(logging.Handler):
@@ -49,6 +51,7 @@ class MeasurementApp(QMainWindow):
         self.plot_button.clicked.connect(self.start_measurement)
 
         self.data = [[] for _ in range(3)]  # Create 3 lists for data
+        self.times = []
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_plot)
 
@@ -63,32 +66,46 @@ class MeasurementApp(QMainWindow):
 
         # Apply styling to the plot widgets
         for i, plot_widget in enumerate(self.plot_widgets):
+            if i != 0:
+                plot_widget.setXLink(self.plot_widgets[0])
+            plot_widget.register(str(i))
             plot_widget.showGrid(x=True, y=True, alpha=0.5)
             plot_widget.getAxis("bottom").setLabel("Time", units="s")
             plot_widget.getAxis("left").setLabel(f"Data {i+1}", units="units")
             plot_widget.getAxis("bottom").setPen(pg.mkPen(color="k"))
+            axis = DateAxisItem()
+            plot_widget.setAxisItems({"bottom": axis})
             plot_widget.getAxis("left").setPen(pg.mkPen(color="k"))
             plot_widget.setBackground("w")  # White background
             plot_widget.setXRange(0, 1)
+            plot_widget.setAutoVisible(x=True)
 
     def start_measurement(self):
         for data in self.data:
             data.clear()
-        self.timer.start(1000)
+        self.timer.start(100)
         self.log_text.clear()
         self.logger.info("Measurement started.")
 
     def update_plot(self):
         new_data_points = [random.uniform(0, 10) for _ in range(3)]
+        time = datetime.datetime.now()
+        self.times.append(time.timestamp())
         for data, data_point, plot_widget in zip(
             self.data, new_data_points, self.plot_widgets
         ):
             data.append(data_point)
-            if len(data) > 200:
-                data = data[-200:]
-            plot_widget.plot(data, clear=True, pen=pg.mkPen("b"))  # Blue pen
-            if len(data) > 1:
-                plot_widget.enableAutoRange("x")
+            # xmax = len(data) - 1
+            # xmin = 0
+            # if len(data) > 20:
+            #     xmin = len(data) - 20
+            plot_widget.plot(
+                x=self.times, y=data, clear=True, pen=pg.mkPen("b")
+            )  # Blue pen
+            if len(data) == 20:
+                plot_widget.enableAutoRange("x", enable=1)
+            # plot_widget.setXRange(xmin, xmax)
+
             self.logger.info(f"Measurement: {data_point:.2f}")
 
 
