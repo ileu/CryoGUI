@@ -4,7 +4,7 @@ import random
 import sys
 import time
 
-from PyQt5 import QtWidgets, Qt, QtCore
+from PyQt5 import QtWidgets
 from PyQt5.QtCore import QTimer, QThread, pyqtSignal
 from PyQt5.QtGui import QIntValidator
 from PyQt5.QtSerialPort import QSerialPortInfo
@@ -102,6 +102,8 @@ class CryoWidget(QWidget):
 
         self.data = [[] for i in range(5)]
         self.user_temperature = 4
+
+        self.main_layout = QHBoxLayout()
 
         self.init_ui()
 
@@ -244,7 +246,7 @@ class CryoWidget(QWidget):
 
         for i, plot_widget in enumerate(self.canvases):
             plot_widget.showGrid(x=True, y=True, alpha=0.5)
-            plot_widget.getAxis("bottom").setLabel("Time", units="s")
+            # plot_widget.getAxis("bottom").setLabel("Time", units="s")
             plot_widget.getAxis("left").setLabel(
                 self.data_names[i], units=self.data_units[i]
             )
@@ -257,9 +259,9 @@ class CryoWidget(QWidget):
             plot_widget.getAxis("top").setStyle(showValues=False)
             plot_widget.getAxis("top").setPen(pg.mkPen(color="k"))
             plot_widget.setBackground("w")  # White background
-            plot_widget.getPlotItem().setContentsMargins(5, 5, 25, 5)
+            plot_widget.getPlotItem().setContentsMargins(0, 0, 25, 10)
             plot_widget.setStyleSheet(
-                "border: 2px solid gray; border-radius: 10px; padding: 5px"
+                "border: 2px solid gray; border-radius: 5px; padding: 2px; background-color: white"
             )
             if i != 0:
                 plot_widget.setXLink(self.canvases[0])

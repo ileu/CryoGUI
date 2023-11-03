@@ -46,10 +46,10 @@ class CryoSetup(WindowSidebarTabs):
         self.inst_connection.InstrumentConnected.connect(self.instrument_connected)
         self.inst_control = InstrumentControlWidget(parent=self)
 
-        # self.inst_connection.InstrumentConnected.connect(self.instrument_connected)
-        # self.inst_connection.InstrumentDisconnected.connect(
-        #     self.instrument_disconnected
-        # )
+        self.inst_connection.InstrumentConnected.connect(self.instrument_connected)
+        self.inst_connection.InstrumentDisconnected.connect(
+            self.instrument_disconnected
+        )
 
         self.sidebar_layout = self.sidebar.layout()
         self.sidebar_layout.addWidget(self.inst_connection)
@@ -91,62 +91,60 @@ class CryoSetup(WindowSidebarTabs):
 
     def instrument_connected(self, inst):
         self.inst_control.add_instrument_tab(inst)
-        for tab in self.tabs:
-            if type(inst).__name__ in self.tab.PM_ALLOWED:
-                self.tab.boxPMChoice.addItems([inst.name + " (" + inst.address + ")"])
-                self.tab.boxPMChoice.adjustSize()
-                if not self.tab.pm:
-                    self.tab.connect_pm(inst)
-                    self.tab.boxPMChoice.setCurrentIndex(
-                        self.tab.boxPMChoice.findText(
-                            inst.name + " (" + inst.address + ")"
-                        )
-                    )
-            if type(inst).__name__ in self.tab.SAMPLE_ALLOWED:
-                self.tab.boxSampleChoice.addItems(
-                    [inst.name + " (" + inst.address + ")"]
-                )
-                self.tab.boxSampleChoice.adjustSize()
-                if not self.tab.samplestage:
-                    self.tab.connect_samplestage(inst)
-                    self.tab.boxSampleChoice.setCurrentIndex(
-                        self.tab.boxSampleChoice.findText(
-                            inst.name + " (" + inst.address + ")"
-                        )
-                    )
         if type(inst).__name__ in self.laser_scanner.LASER_ALLOWED:
             self.laser_scanner.connect_laser(inst)
         if type(inst).__name__ in self.laser_scanner.PM_ALLOWED:
             self.laser_scanner.connect_pm(inst)
-        if type(inst).__name__ in self.laser_scanner.PM_100D_ALLOWED:
-            self.laser_scanner.connect_pm100D(inst)
+        # for tab in self.tabs:
+        #     if type(inst).__name__ in self.tab.PM_ALLOWED:
+        #         self.tab.boxPMChoice.addItems([inst.name + " (" + inst.address + ")"])
+        #         self.tab.boxPMChoice.adjustSize()
+        #         if not self.tab.pm:
+        #             self.tab.connect_pm(inst)
+        #             self.tab.boxPMChoice.setCurrentIndex(
+        #                 self.tab.boxPMChoice.findText(
+        #                     inst.name + " (" + inst.address + ")"
+        #                 )
+        #             )
+        #     if type(inst).__name__ in self.tab.SAMPLE_ALLOWED:
+        #         self.tab.boxSampleChoice.addItems(
+        #             [inst.name + " (" + inst.address + ")"]
+        #         )
+        #         self.tab.boxSampleChoice.adjustSize()
+        #         if not self.tab.samplestage:
+        #             self.tab.connect_samplestage(inst)
+        #             self.tab.boxSampleChoice.setCurrentIndex(
+        #                 self.tab.boxSampleChoice.findText(
+        #                     inst.name + " (" + inst.address + ")"
+        #                 )
+        #             )
 
-    # def instrument_disconnected(self, inst):
-    #     self.inst_control.remove_instrument_tab(inst.address)
-    #     if type(inst).__name__ in self.tab1.PM_ALLOWED:
-    #         print("disconect")
-    #         self.tab1.boxPMChoice.removeItem(
-    #             self.tab1.boxPMChoice.findText(inst.name + " (" + inst.address + ")")
-    #         )
-    #         self.tab1.disconnect_pm()
-    #     if type(inst).__name__ in self.tab1.SAMPLE_ALLOWED:
-    #         self.tab1.boxSampleChoice.removeItem(
-    #             self.tab1.boxSampleChoice.findText(
-    #                 inst.name + " (" + inst.address + ")"
-    #             )
-    #         )
-    #     if type(inst).__name__ in self.tab1.INPUT_ALLOWED:
-    #         self.tab1.boxInputChoice.removeItem(
-    #             self.tab1.boxInputChoice.findText(inst.name + " (" + inst.address + ")")
-    #         )
-    #     if type(inst).__name__ in self.tab1.OUTPUT_ALLOWED:
-    #         self.tab1.boxOutputChoice.removeItem(
-    #             self.tab1.boxOutputChoice.findText(
-    #                 inst.name + " (" + inst.address + ")"
-    #             )
-    #         )
-    #     del self.inst_connection.connected_instruments[inst.address]
-    #
+    def instrument_disconnected(self, inst):
+        self.inst_control.remove_instrument_tab(inst.address)
+        #     if type(inst).__name__ in self.tab1.PM_ALLOWED:
+        #         print("disconect")
+        #         self.tab1.boxPMChoice.removeItem(
+        #             self.tab1.boxPMChoice.findText(inst.name + " (" + inst.address + ")")
+        #         )
+        #         self.tab1.disconnect_pm()
+        #     if type(inst).__name__ in self.tab1.SAMPLE_ALLOWED:
+        #         self.tab1.boxSampleChoice.removeItem(
+        #             self.tab1.boxSampleChoice.findText(
+        #                 inst.name + " (" + inst.address + ")"
+        #             )
+        #         )
+        #     if type(inst).__name__ in self.tab1.INPUT_ALLOWED:
+        #         self.tab1.boxInputChoice.removeItem(
+        #             self.tab1.boxInputChoice.findText(inst.name + " (" + inst.address + ")")
+        #         )
+        #     if type(inst).__name__ in self.tab1.OUTPUT_ALLOWED:
+        #         self.tab1.boxOutputChoice.removeItem(
+        #             self.tab1.boxOutputChoice.findText(
+        #                 inst.name + " (" + inst.address + ")"
+        #             )
+        #         )
+        del self.inst_connection.connected_instruments[inst.address]
+
     def closeEvent(self, *args, **kwargs):
         super(QtWidgets.QMainWindow, self).closeEvent(*args, **kwargs)
         if not self.stage_widget.pm is None:

@@ -3,7 +3,7 @@ import threading
 import time
 from typing import List
 
-from PyQt5.QtCore import pyqtSignal, QThread, QObject, QTimer
+from PyQt5.QtCore import pyqtSignal, QThread, QObject, QTimer, Qt
 from PyQt5.QtWidgets import (
     QApplication,
     QMainWindow,
@@ -16,6 +16,9 @@ from PyQt5.QtWidgets import (
     QAction,
     QLineEdit,
     QHBoxLayout,
+    QRadioButton,
+    QGridLayout,
+    QButtonGroup,
 )
 from pymeasure.instruments.attocube.anc300 import Axis
 from pymeasure.instruments.attocube import ANC300Controller
@@ -40,11 +43,37 @@ class ANCGUI(InstrumentWidget):
         super().__init__(parent=parent)
         self.ip_address = None
         self.ancController = None
+        self.setObjectName("ANC300")
 
         mainLayout = QVBoxLayout()
         mainLayout.setSpacing(0)
-        self.status_label = QLabel("Disconnected")
-        self.statusUpdated.connect(self.status_label.setText)
+        buttonLayout = QGridLayout()
+        self.gnd_all_button = QPushButton("Ground All")
+        self.gnd_all_button.clicked.connect(self.ground_all)
+
+        temp_group = QButtonGroup(self)
+        self.coarse_optimize_button = QRadioButton("Coarse Optimize")
+        self.coarse_optimize_button.setChecked(True)
+        self.fine_optimize_button = QRadioButton("Fine Optimize")
+
+        temp_group.addButton(self.coarse_optimize_button)
+        temp_group.addButton(self.fine_optimize_button)
+
+        optimize_group = QButtonGroup(self)
+        self.low_temp_button = QRadioButton("Low Temp")
+        self.high_temp_button = QRadioButton("High Temp")
+        self.high_temp_button.setChecked(True)
+
+        optimize_group.addButton(self.low_temp_button)
+        optimize_group.addButton(self.high_temp_button)
+
+        buttonLayout.addWidget(self.high_temp_button, 0, 0)
+        buttonLayout.addWidget(self.low_temp_button, 0, 1)
+        buttonLayout.addWidget(self.gnd_all_button, 0, 2)
+        buttonLayout.addWidget(self.coarse_optimize_button, 1, 0)
+        buttonLayout.addWidget(self.fine_optimize_button, 1, 1)
+
+        mainLayout.addLayout(buttonLayout)
 
         self.axis = [
             "RZ",
@@ -62,7 +91,6 @@ class ANCGUI(InstrumentWidget):
             # ax_widget.deactivate()
             mainLayout.addWidget(ax_widget)
 
-        mainLayout.addWidget(self.status_label)
         self.setLayout(mainLayout)
         self.refresh_timer = QTimer()
         self.refresh_timer.setInterval(500)
@@ -116,8 +144,16 @@ class ANCGUI(InstrumentWidget):
         self.axis_widgets["RY"].connect_keys("up", "down")
 
         logger.info("ANC300 initialized")
+        self.refresh_timer.start()
         self.connected.emit(True)
         return True
+
+    def ground_all(self):
+        if self.ancController is None:
+            return
+
+        for axis in self.axis_widgets.values():
+            axis.controller.update_mode("gnd")
 
     def disconnect_instrument(self) -> bool:
         pass

@@ -68,7 +68,6 @@ class MeasurementApp(QMainWindow):
         for i, plot_widget in enumerate(self.plot_widgets):
             if i != 0:
                 plot_widget.setXLink(self.plot_widgets[0])
-            plot_widget.register(str(i))
             plot_widget.showGrid(x=True, y=True, alpha=0.5)
             plot_widget.getAxis("bottom").setLabel("Time", units="s")
             plot_widget.getAxis("left").setLabel(f"Data {i+1}", units="units")

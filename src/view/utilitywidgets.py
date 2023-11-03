@@ -158,7 +158,14 @@ class SetWidget(QWidget):
 
         self.initUI()
 
-        self.valueChanged.connect(lambda x: self.input.setText(str(x)))
+        self.valueChanged.connect(self.set_input_text)
+
+    def set_input_text(self, text):
+        if not isinstance(text, str):
+            text = str(text)
+
+        if not self.input.hasFocus():
+            self.input.setText(text)
 
     def initUI(self):
         self.input.setAlignment(Qt.AlignmentFlag.AlignRight)
