@@ -92,7 +92,11 @@ class ANCGUI(InstrumentWidget):
             mainLayout.addWidget(ax_widget)
 
         self.setLayout(mainLayout)
+        self.refresh_thread = QThread()
+        self.refresh_thread.start()
         self.refresh_timer = QTimer()
+        self.refresh_thread.moveToThread(self.refresh_thread)
+
         self.refresh_timer.setInterval(500)
         self.refresh_timer.timeout.connect(self.refresh)
 
@@ -119,12 +123,12 @@ class ANCGUI(InstrumentWidget):
             axis = self.axis
 
         try:
-            ancController = DummyANC300Controller(
-                adapter=address, axisnames=axis, passwd=passwd
-            )
-            # ancController: ANC300Controller = ANC300Controller(
+            # ancController = DummyANC300Controller(
             #     adapter=address, axisnames=axis, passwd=passwd
             # )
+            ancController: ANC300Controller = ANC300Controller(
+                adapter=address, axisnames=axis, passwd=passwd
+            )
         except Exception as e:
             logger.error(f"Connection failed: {e}")
             self.statusUpdated.emit(f"Connection failed: {e}")
@@ -140,11 +144,12 @@ class ANCGUI(InstrumentWidget):
 
         self.axis_widgets["LX"].connect_keys("a", "d")
         self.axis_widgets["LY"].connect_keys("w", "s")
-        self.axis_widgets["RX"].connect_keys("left", "right")
-        self.axis_widgets["RY"].connect_keys("up", "down")
+        self.axis_widgets["RX"].connect_keys("right", "left")
+        self.axis_widgets["RY"].connect_keys("down", "up")
 
         logger.info("ANC300 initialized")
-        self.refresh_timer.start()
+        # self.refresh_timer.start()
+        self.refresh()
         self.connected.emit(True)
         return True
 

@@ -2,6 +2,7 @@ import datetime
 import os
 import sys
 import logging
+import time
 
 import matplotlib
 from PyQt5.QtCore import QThread, pyqtSlot
@@ -15,6 +16,7 @@ from PyQt5.QtWidgets import (
     QFrame,
 )
 from onglabsuite.instruments.thorlabs.pm100d import PM100D
+from onglabsuite.instruments.keysight.n7744c import N7744C
 from pymeasure.instruments.attocube import ANC300Controller
 from pyqtgraph import PlotWidget
 
@@ -113,7 +115,8 @@ class MeasurementApp(QMainWindow):
         )
         logger.info("ANC300 connected")
         # powermeter = PM100D("USB0::0x1313::0x8078::P0024405::INSTR")
-        powermeter = PM100D("USB0::0x1313::0x8072::1916143::INSTR")
+        # powermeter = PM100D("USB0::0x1313::0x8072::1916143::INSTR")
+        powermeter = N7744C("TCPIP0::192.168.10.110::inst0::INSTR")
         devices = {"anc300": controller, "pm": powermeter}
         logger.info("Powermeter connected")
         logger.info("Setup Thread")
@@ -121,7 +124,8 @@ class MeasurementApp(QMainWindow):
         self.thread = QThread()
         logger.info("Thread created")
         # create the experiment
-        self.experiment = OptimizationMeasurement(devices)
+        self.experiment = StepMeasurement(devices)
+        time.sleep(1)
         logger.info("Experiment created")
         # move experiment to thread
         self.experiment.moveToThread(self.thread)

@@ -39,6 +39,10 @@ class Window(QMainWindow):
 
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.timer_thread = QThread()
+        self.timer_thread.start()
+        self.timer = QTimer()
+        self.timer.moveToThread(self.timer_thread)
         self.setupUi()
 
     def setupUi(self):
@@ -52,7 +56,6 @@ class Window(QMainWindow):
         countBtn = QPushButton("Start me!")
         stopBtn = QPushButton("Stop me!")
 
-        self.timer = QTimer()
         self.timer.timeout.connect(self.task)
         countBtn.clicked.connect(self.runTasks)
         stopBtn.clicked.connect(self.stopTask)
@@ -83,7 +86,7 @@ class Window(QMainWindow):
     def task(self):
         print("THIS IS A TASK")
         self.shouted.emit(self.shouts)
-        self.shouts += 1
+        time.sleep(0.5)
 
     def stopTask(self):
         self.timer.stop()

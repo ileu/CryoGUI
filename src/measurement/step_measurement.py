@@ -96,7 +96,7 @@ class StepMeasurement(QObject):
         anc300.stop_all()
         anc300.ground_all()
 
-        axis: Axis = anc300.LY
+        axis: Axis = anc300.LX
 
         axis.mode = "stp"
 
@@ -107,7 +107,7 @@ class StepMeasurement(QObject):
         try:
             for voltage in range(
                 45,
-                30,
+                40,
                 -1,
             ):
                 # for rep, voltage in enumerate([starting_voltage] * 6):
@@ -128,7 +128,7 @@ class StepMeasurement(QObject):
                 date = datetime.datetime.now().strftime("%Y%m%d")
                 filename = (
                     save_path
-                    + rf"\{date}_axis-LY_15K_rep-{rep}_voltage-{voltage}_frequency-{frequency}_.csv"
+                    + rf"\{date}_axis-LX_150K_rep-{rep}_voltage-{voltage}_frequency-{frequency}_.csv"
                 )
                 while os.path.exists(filename):
                     if filename.split("_")[-2].isdigit():
@@ -161,11 +161,12 @@ class StepMeasurement(QObject):
                     logger.debug(f"measuring power")
                     for n in range(power_avg):
                         try:
-                            p = pm.power_W
-                            logger.debug("after measure")
-                            powers.append(p)
-                            logger.debug("after append")
-                            time.sleep(0.1)
+                            if not pm.instrument.waiting:
+                                p = pm.power_uW
+                                logger.debug("after measure")
+                                powers.append(p)
+                                logger.debug("after append")
+                                time.sleep(0.1)
                         except Exception as e:
                             logger.error(f"Error: {e}")
                     power = np.nanmean(powers)

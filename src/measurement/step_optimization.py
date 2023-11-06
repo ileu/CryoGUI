@@ -86,8 +86,9 @@ class OptimizationMeasurement(QObject):
                 axis.stepu = 1
                 time.sleep(0.25)
                 try:
-                    powers.append(pm.power_W)
-                    self.newDataPoint.emit(powers[-1])
+                    if not pm.instrument.waiting:
+                        powers.append(pm.power_uW)
+                        self.newDataPoint.emit(powers[-1])
                 except Exception as e:
                     logger.warning(f"Error reading powermeter: {e}")
                     i -= 2
