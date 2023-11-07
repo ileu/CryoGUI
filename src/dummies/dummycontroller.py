@@ -2,6 +2,9 @@ import logging
 import random
 from typing import List
 
+import numpy as np
+
+from src.controller._quantities import PowerQty
 from src.dummies.dummies import DummyOpenLoopAxis
 
 logger = logging.getLogger(__name__)
@@ -113,6 +116,22 @@ class DummyAttoDRY(DummyController):
 
     def getUserTemperature(self):
         return random.uniform(273, 274)
+
+
+class DummyPM100D(PowerQty):
+    def __init__(self, address, signal_width=30, signal_max_power=10):
+        super().__init__()
+        self.address = address
+        self.signal_width = signal_width
+        self.signal_max_power = signal_max_power
+
+    @property
+    def power_uW(self, position=None):
+        if position is None:
+            return random.normalvariate(self.signal_max_power, self.signal_width)
+        return self.signal_max_power * np.exp(
+            -np.power((position - position) / self.signal_width, 2.0) / 2
+        )
 
 
 if __name__ == "__main__":

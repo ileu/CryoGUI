@@ -1,3 +1,4 @@
+import threading
 import time
 
 from PyQt5.QtCore import QObject, pyqtSignal, QTimer
@@ -18,6 +19,7 @@ class OpenLoopController(QObject):
         super().__init__(parent)
         self.axis = axis
         self.refresh_timer = None
+        self.activated = False
 
     # def __getattribute__(self, item):
     #     if item != "axis" and self.axis is None:
@@ -37,6 +39,14 @@ class OpenLoopController(QObject):
 
     def stop_refresh_timer(self):
         self.refresh_timer.stop()
+
+    def refresh(self):
+        print(threading.current_thread().name)
+        self.update_mode()
+        self.update_values()
+
+    def toggle_activation(self, b: bool):
+        self.activated = b
 
     def measure_capacity(self):
         logger.info("Measuring Capacity")
@@ -62,6 +72,10 @@ class OpenLoopController(QObject):
 
     def step_axis(self, value: float, direction: str):
         logger.debug(f"Step {direction} by {value}")
+        if not self.activated:
+            logger.warning("Axis not activated")
+            self.statusUpdated.emit("Axis not activated")
+            return
         self.statusUpdated.emit("Stepping")
         if self.axis.offset_voltage != 0:
             self.update_mode("stp+")
@@ -78,10 +92,6 @@ class OpenLoopController(QObject):
             self.statusUpdated.emit("Ready")
         except Exception as e:
             logger.warning(f"Error stepping axis: {e}")
-
-    def refresh(self):
-        self.update_mode()
-        self.update_values()
 
     def update_mode(self, mode: str = None):
         if mode is None:

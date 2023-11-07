@@ -5,7 +5,7 @@ import logging
 import time
 
 import matplotlib
-from PyQt5.QtCore import QThread, pyqtSlot
+from PyQt5.QtCore import QThread, pyqtSlot, pyqtSignal
 from PyQt5.QtWidgets import (
     QApplication,
     QMainWindow,
@@ -20,6 +20,7 @@ from onglabsuite.instruments.keysight.n7744c import N7744C
 from pymeasure.instruments.attocube import ANC300Controller
 from pyqtgraph import PlotWidget
 
+from src.dummies.dummycontroller import DummyANC300Controller
 from src.measurement.step_measurement import StepMeasurement
 from src.measurement.step_optimization import OptimizationMeasurement
 from src.measurement.step_measurement import PowermeterMeasurement
@@ -51,6 +52,9 @@ class QTextEditHandler(logging.Handler):
 
 
 class MeasurementApp(QMainWindow):
+    measurementStarted = pyqtSignal(list)
+    measurementStopped = pyqtSignal()
+
     def __init__(self):
         super().__init__()
 
@@ -83,14 +87,19 @@ class MeasurementApp(QMainWindow):
 
         self.plot_button.clicked.connect(self.start_measurement)
 
-        self.thread: QThread = None
-        self.experiment = None
+        self.thread: QThread = QThread()
+        self.thread.start()
+        self.experiment = OptimizationMeasurement()
+
+        self.experiment.moveToThread(self.thread)
+        self.experiment.newDataPoint.connect(self.update_plot)
+        self.experiment.measurementFinished.connect(self.switch_start)
+
+        self.measurementStarted.connect(self.experiment.measure)
+
         self.data = []
         self.plot_item = None
         logger.info("SETUP")
-
-        # self.timer = QTimer(self)
-        # self.timer.timeout.connect(self.update_plot)
 
     @pyqtSlot(bool)
     def switch_start(self, value):
@@ -108,7 +117,12 @@ class MeasurementApp(QMainWindow):
         self.data = []  # Reset data
         # self.timer.start(1000)  # Update plot every 1 second
         logger.info("Connecting devices")
-        controller = ANC300Controller(
+        # controller = ANC300Controller(
+        #     adapter="TCPIP::192.168.1.2::7230::SOCKET",
+        #     axisnames=["RZ", "RY", "RX", "LZ", "LY", "LX"],
+        #     passwd="123456",
+        # )
+        controller = DummyANC300Controller(
             adapter="TCPIP::192.168.1.2::7230::SOCKET",
             axisnames=["RZ", "RY", "RX", "LZ", "LY", "LX"],
             passwd="123456",
@@ -116,32 +130,14 @@ class MeasurementApp(QMainWindow):
         logger.info("ANC300 connected")
         # powermeter = PM100D("USB0::0x1313::0x8078::P0024405::INSTR")
         # powermeter = PM100D("USB0::0x1313::0x8072::1916143::INSTR")
+        powermeter = DummyPM100D("USB0::0x1313::0x8072::1916143::INSTR")
         powermeter = N7744C("TCPIP0::192.168.10.110::inst0::INSTR")
         devices = {"anc300": controller, "pm": powermeter}
         logger.info("Powermeter connected")
-        logger.info("Setup Thread")
-        # create a thread
-        self.thread = QThread()
-        logger.info("Thread created")
-        # create the experiment
-        self.experiment = StepMeasurement(devices)
-        time.sleep(1)
-        logger.info("Experiment created")
-        # move experiment to thread
-        self.experiment.moveToThread(self.thread)
-        logger.info("Experiment moved to thread")
-        # connecting signals
-        self.thread.started.connect(self.experiment.measure)
-        self.experiment.newDataPoint.connect(self.update_plot)
-        self.experiment.measurementFinished.connect(self.switch_start)
-        self.thread.finished.connect(self.thread.deleteLater)
-        self.experiment.measurementFinished.connect(self.experiment.deleteLater)
-        logger.info("Signals connected")
 
         # start the thread
         logger.info("measurement started")
-        self.thread.start()
-        # self.experiment.measure(devices)
+        self.measurementStarted.emit(devices)
 
     def stop_experiment(self):
         logger.info("stopping experiment")

@@ -87,6 +87,9 @@ class OpenLoopWidget(QFrame):
         self.control_bar.capacity_button.clicked.connect(
             self.controller.measure_capacity
         )
+        self.control_bar.active_button.toggled.connect(
+            self.controller.toggle_activation
+        )
         self.controller.measuredCapacity.connect(self.control_bar.set_capacity)
 
         self.lock_button.clicked.connect(self.optimize_button.setEnabled)
@@ -193,7 +196,7 @@ class OpenLoopWidget(QFrame):
         # self.cmove_up_button.released.connect(
         #     lambda: self.controller.step_axis(1, "down")
         # )
-        self.controller.update_values()
+        self.controller.start_refresh_timer()
         self.activate()
         self.controller.statusUpdated.emit("Ready")
 
@@ -241,7 +244,7 @@ def main():
     # olw = OpenLoopWidget(axis=DummyAxis(), title="Test", lock_optimize_on_start=False)
     olw = OpenLoopWidget(lock_optimize_on_start=True)
     olw.connect_axis(DummyOpenLoopAxis())
-    # olw.controller.start_refresh_timer()
+    olw.controller.start_refresh_timer()
     olw.show()
     app.exec()
 
