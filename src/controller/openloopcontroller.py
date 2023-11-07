@@ -1,6 +1,6 @@
 import time
 
-from PyQt5.QtCore import QObject, pyqtSignal
+from PyQt5.QtCore import QObject, pyqtSignal, QTimer
 
 import logging
 
@@ -17,6 +17,7 @@ class OpenLoopController(QObject):
     def __init__(self, axis=None, parent=None):
         super().__init__(parent)
         self.axis = axis
+        self.refresh_timer = None
 
     # def __getattribute__(self, item):
     #     if item != "axis" and self.axis is None:
@@ -25,6 +26,17 @@ class OpenLoopController(QObject):
     #         return None
     #
     #     return super().__getattribute__(item)
+
+    def start_refresh_timer(self):
+        if self.refresh_timer is None:
+            self.refresh_timer = QTimer(self)
+
+        self.refresh_timer.timeout.connect(self.refresh)
+
+        self.refresh_timer.start(500)
+
+    def stop_refresh_timer(self):
+        self.refresh_timer.stop()
 
     def measure_capacity(self):
         logger.info("Measuring Capacity")
@@ -66,6 +78,10 @@ class OpenLoopController(QObject):
             self.statusUpdated.emit("Ready")
         except Exception as e:
             logger.warning(f"Error stepping axis: {e}")
+
+    def refresh(self):
+        self.update_mode()
+        self.update_values()
 
     def update_mode(self, mode: str = None):
         if mode is None:

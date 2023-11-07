@@ -86,11 +86,21 @@ class DummyOpenLoopAxis:
     ):
         self._title = title
 
-        self.voltage = voltage if voltage else random.randint(0, 50)
         self.frequency = frequency if frequency else random.randint(16, 1000)
         self.offset_voltage = offset if offset else random.randint(0, 50)
         self.mode = mode
-        self.capacity = capacity if capacity else random.uniform(200, 300)
+
+    @property
+    def capacity(self):
+        return random.uniform(200, 300)
+
+    @property
+    def voltage(self):
+        return random.uniform(0, 50)
+
+    @voltage.setter
+    def voltage(self, value):
+        print(f"Setting voltage {value}")
 
     def __getattr__(self, item):
         if item.startswith("_"):
