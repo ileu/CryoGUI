@@ -1,6 +1,6 @@
 import time
 
-from PyQt5.QtCore import QObject, pyqtSignal
+from PyQt5.QtCore import QObject, pyqtSignal, QTimer
 
 from src.dummies.dummycontroller import DummyAttoDRY
 
@@ -13,7 +13,9 @@ logger = logging.getLogger(__name__)
 
 class AttoDry800Controller(QObject):
     updatedValues = pyqtSignal(list)
+    pidValues = pyqtSignal(list)
     failedRequest = pyqtSignal(str)
+    connectedToInstrument = pyqtSignal()
 
     def __init__(self, attodry):
         super().__init__()
@@ -26,6 +28,8 @@ class AttoDry800Controller(QObject):
             self.attodry.GetTurbopumpFrequ800,
             self.attodry.getUserTemperature,
         ]
+        self.refresh_timer = QTimer()
+        self.refresh_timer.timeout.connect(self.update_values)
 
     def sendCommand(self, command, **kwargs):
         try:
@@ -47,6 +51,18 @@ class AttoDry800Controller(QObject):
 
         self.updatedValues.emit(data)
 
+    def update_pid_values(self):
+        try:
+            pid_values = [
+                self.attodry.getPvalue(),
+                self.attodry.getIValue(),
+                self.attodry.getDValue(),
+            ]
+            self.pidValues.emit(pid_values)
+        except Exception as e:
+            logger.warning(f"Somthing went wrong {e}")
+            self.failedRequest.emit(str(e))
+
     def connect_acctodry(self):
         try:
             self.attodry.begin()
@@ -65,6 +81,7 @@ class AttoDry800Controller(QObject):
             else:
                 print("something went wrong.")
                 return False
+            self.connectedToInstrument.emit()
             return True
         except Exception as e:
             print(e)

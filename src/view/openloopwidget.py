@@ -37,6 +37,7 @@ class OpenLoopWidget(QFrame):
 
     def __init__(
         self,
+        controller: OpenLoopController,
         parent: QWidget = None,
         axis: Axis = None,
         title: str = "Quantity",
@@ -63,15 +64,10 @@ class OpenLoopWidget(QFrame):
         self.cmove_down_button = QPushButton(">>")
         self.cmove_up_button = QPushButton("<<")
 
-        if axis is None:
-            self.controller = OpenLoopController()
+        if controller.axis is None:
             self.deactivate()
-        else:
-            self.controller = OpenLoopController(axis=axis)
 
-        self.controller_thread = QThread()
-        self.controller_thread.start()
-        self.controller.moveToThread(self.controller_thread)
+        self.controller = controller
 
         self.controller.lockUI.connect(self.toggle_activation)
 
@@ -168,9 +164,7 @@ class OpenLoopWidget(QFrame):
         self.frequency_widget.setValue(values[1])
         self.offset_widget.setValue(values[2])
 
-    def connect_axis(self, axis: Axis):
-        self.controller.axis = axis
-
+    def connect_axis(self):
         self.controller.modeUpdated.connect(self.control_bar.set_mode)
         self.controller.valuesUpdated.connect(self.refresh_values)
 

@@ -23,6 +23,7 @@ from PyQt5.QtWidgets import (
 from pymeasure.instruments.attocube.anc300 import Axis
 from pymeasure.instruments.attocube import ANC300Controller
 
+from src.controller.openloopcontroller import OpenLoopController
 from src.dummies.dummycontroller import DummyANC300Controller
 from src.view.instrumentwidget import InstrumentWidget
 from src.view import OpenLoopWidget
@@ -84,6 +85,9 @@ class ANCGUI(InstrumentWidget):
             "LX",
         ]
         self.axis_widgets = {}
+
+        self.controller_thread = QThread()
+        self.controller_thread.start()
 
         for axi in self.axis:
             ax_widget = OpenLoopWidget(title=axi, lock_optimize_on_start="Z" in axi)
