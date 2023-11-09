@@ -144,7 +144,6 @@ class SetWidget(QWidget):
         self, title="", symbols: int = 7, unit: str = "", bottom=0, top=60, **kwargs
     ):
         super().__init__()
-        self.value = 0
         self.symbols = symbols
         self.unit = unit
         self.top = top
@@ -176,7 +175,7 @@ class SetWidget(QWidget):
         self.input.setFixedSize((self.symbols + 1) * 10, 24)  # +1 because decimal point
         self.input.setValidator(QDoubleValidator(bottom=self.bottom, top=self.top))
         self.input.returnPressed.connect(self.setValue)
-        self.input.setPlaceholderText(f"{self.value}"[: self.symbols - 1])
+        self.input.setPlaceholderText(f"{0.0}"[: self.symbols - 1])
         self.input.setMaxLength(int(self.symbols))
 
         self.set_button.setStyleSheet(
@@ -210,7 +209,6 @@ class SetWidget(QWidget):
             except ValueError:
                 logger.warning(f"{self.title} failed to set value")
 
-        self.value = value
         self.valueChanged.emit(value)
 
     def activate(self):

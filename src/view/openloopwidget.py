@@ -160,9 +160,9 @@ class OpenLoopWidget(QFrame):
             self.lock_button.setIcon(QIcon(self.lock_path + r"\unlock.png"))
 
     def refresh_values(self, values: list):
-        self.voltage_widget.setValue(values[0])
-        self.frequency_widget.setValue(values[1])
-        self.offset_widget.setValue(values[2])
+        self.voltage_widget.set_input_text(values[0])
+        self.frequency_widget.set_input_text(values[1])
+        self.offset_widget.set_input_text(values[2])
 
     def connect_axis(self, axis: Axis):
         self.controller.axis = axis

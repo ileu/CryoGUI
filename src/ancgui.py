@@ -73,10 +73,10 @@ class ANCGUI(InstrumentWidget):
         mainLayout.addLayout(buttonLayout)
 
         self.axis = [
-            "RZ",
-            "RY",
-            "RX",
-            "LZ",
+            # "RZ",
+            # "RY",
+            # "RX",
+            # "LZ",
             "LY",
             "LX",
         ]
@@ -146,10 +146,10 @@ class ANCGUI(InstrumentWidget):
             axis_widget.connect_axis(getattr(ancController, axis_widget.title))
             axis_widget.activate()
 
-        self.axis_widgets["LX"].connect_keys("a", "d")
-        self.axis_widgets["LY"].connect_keys("w", "s")
-        self.axis_widgets["RX"].connect_keys("right", "left")
-        self.axis_widgets["RY"].connect_keys("down", "up")
+        # self.axis_widgets["LX"].connect_keys("a", "d")
+        # self.axis_widgets["LY"].connect_keys("w", "s")
+        # self.axis_widgets["RX"].connect_keys("right", "left")
+        # self.axis_widgets["RY"].connect_keys("down", "up")
 
         logger.info("ANC300 initialized")
         # self.refresh_timer.start()
