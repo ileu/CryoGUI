@@ -33,10 +33,6 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-class WorkerThread(QThread):
-    finished = pyqtSignal()
-
-
 class ANCGUI(InstrumentWidget):
     connected = pyqtSignal(bool)
 
@@ -90,7 +86,11 @@ class ANCGUI(InstrumentWidget):
         self.controller_thread.start()
 
         for axi in self.axis:
-            ax_widget = OpenLoopWidget(title=axi, lock_optimize_on_start="Z" in axi)
+            controller = OpenLoopController(axis=None)
+            controller.moveToThread(self.controller_thread)
+            ax_widget = OpenLoopWidget(
+                title=axi, controller=controller, lock_optimize_on_start="Z" in axi
+            )
             self.axis_widgets[axi] = ax_widget
             # ax_widget.deactivate()
             mainLayout.addWidget(ax_widget)

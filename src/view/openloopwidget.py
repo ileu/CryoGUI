@@ -164,7 +164,8 @@ class OpenLoopWidget(QFrame):
         self.frequency_widget.setValue(values[1])
         self.offset_widget.setValue(values[2])
 
-    def connect_axis(self):
+    def connect_axis(self, axis: Axis):
+        self.controller.axis = axis
         self.controller.modeUpdated.connect(self.control_bar.set_mode)
         self.controller.valuesUpdated.connect(self.refresh_values)
 
