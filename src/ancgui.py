@@ -92,17 +92,9 @@ class ANCGUI(InstrumentWidget):
                 title=axi, controller=controller, lock_optimize_on_start="Z" in axi
             )
             self.axis_widgets[axi] = ax_widget
-            # ax_widget.deactivate()
             mainLayout.addWidget(ax_widget)
 
         self.setLayout(mainLayout)
-        # self.refresh_thread = QThread()
-        # self.refresh_thread.start()
-        # self.refresh_timer = QTimer()
-        # self.refresh_thread.moveToThread(self.refresh_thread)
-        #
-        # self.refresh_timer.setInterval(500)
-        # self.refresh_timer.timeout.connect(self.refresh)
 
     def refresh(self):
         for ax_wid in self.axis_widgets.values():

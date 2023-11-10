@@ -2,8 +2,10 @@ import datetime
 import os
 import sys
 import time
+from typing import List
 
-from PyQt5.QtCore import QTimer, pyqtSignal, QThread
+import pyqtgraph as pg
+from PyQt5.QtCore import pyqtSignal, QThread
 from PyQt5.QtGui import QIntValidator
 from PyQt5.QtSerialPort import QSerialPortInfo
 from PyQt5.QtWidgets import (
@@ -19,10 +21,7 @@ from PyQt5.QtWidgets import (
     QHBoxLayout,
     QVBoxLayout,
 )
-
 from pyqtgraph import PlotWidget
-import pyqtgraph as pg
-from typing import List
 
 from src.controller.attodry800 import AttoDry800Controller
 
@@ -37,8 +36,6 @@ class CryoWidget(QWidget):
         self.serial_port = None
         self.log_file_location = None
 
-        self.controller = AttoDry800Controller()
-        self.is_connected = False
         self.action_monitor = QTextEdit()
         self.port_combo = QComboBox()
         self.connect_button = QPushButton("Connect")
@@ -76,8 +73,6 @@ class CryoWidget(QWidget):
         self.data = [[] for i in range(5)]
         self.user_temperature = 4
 
-        self.main_layout = QHBoxLayout()
-
         self.init_ui()
 
         for widget in self.findChildren((QPushButton, QLineEdit)):
@@ -85,14 +80,19 @@ class CryoWidget(QWidget):
                 continue
             widget.setEnabled(False)
 
-        self.controller.updatedValues.connect(self.plot_data)
-        self.controller.statusUpdated.connect(self.action_monitor.append)
-
         self.controller_thread = QThread()
         self.controller_thread.start()
 
+        self.controller = AttoDry800Controller()
         self.controller.moveToThread(self.controller_thread)
 
+        self.connect_button.clicked.connect(self.controller.connect_attodry)
+        self.base_temperature_button.clicked.connect(
+            self.controller.attodry.goToBaseTemperature
+        )
+
+        self.controller.updatedValues.connect(self.plot_data)
+        self.controller.statusUpdated.connect(self.action_monitor.append)
 
     def init_ui(self):
         main_layout = QVBoxLayout()
@@ -123,8 +123,6 @@ class CryoWidget(QWidget):
             )
         )
         self.logging_interval_edit.setEnabled(False)
-
-        self.connect_button.clicked.connect(lambda: self.controller.connect_attodry(self.port_combo.currentText()))
 
         self.log_file_browse = QPushButton("Start Logging")
         self.log_file_browse.clicked.connect(self.logging_manager)
@@ -158,9 +156,7 @@ class CryoWidget(QWidget):
 
         controller_layout = QGridLayout()
         self.base_temperature_button = QPushButton("Base Temperature")
-        self.base_temperature_button.clicked.connect(
-            self.controller.attodry.goToBaseTemperature
-        )
+
         controller_layout.addWidget(self.base_temperature_button, 0, 0)
 
         self.heat_up_button = QPushButton("Heat Up")
@@ -286,7 +282,6 @@ class CryoWidget(QWidget):
         for widget in self.findChildren(QWidget):
             widget.setEnabled(True)
         self.connect_button.setEnabled(False)
-        self.is_connected = True
 
     def disconnect_controller(self):
         try:

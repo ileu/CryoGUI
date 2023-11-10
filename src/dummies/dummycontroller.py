@@ -117,6 +117,12 @@ class DummyAttoDRY(DummyController):
     def getUserTemperature(self):
         return random.uniform(273, 274)
 
+    def isDeviceInitialised(self):
+        return True
+
+    def isDeviceConnected(self):
+        return True
+
 
 class DummyPM100D(PowerQty):
     def __init__(self, address, signal_width=30, signal_max_power=10):
