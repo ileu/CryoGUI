@@ -1,6 +1,6 @@
 PyQt5>=5.15.8
 pyqtgraph>=0.13.3
-numpy>=1.25.2
+numpy>=1.24.2
 matplotlib>=3.7.2
 netifaces>=0.11.0
 pymeasure>=0.12.0

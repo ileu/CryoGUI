@@ -1,16 +1,13 @@
 import datetime
 import os
-import random
 import sys
 import time
 
-from PyQt5 import QtWidgets
-from PyQt5.QtCore import QTimer, QThread, pyqtSignal
+from PyQt5.QtCore import QTimer, pyqtSignal, QThread
 from PyQt5.QtGui import QIntValidator
 from PyQt5.QtSerialPort import QSerialPortInfo
 from PyQt5.QtWidgets import (
     QApplication,
-    QMainWindow,
     QPushButton,
     QWidget,
     QFileDialog,
@@ -20,18 +17,14 @@ from PyQt5.QtWidgets import (
     QTextEdit,
     QLineEdit,
     QHBoxLayout,
-    QSpacerItem,
     QVBoxLayout,
 )
 
 from pyqtgraph import PlotWidget
 import pyqtgraph as pg
+from typing import List
 
 from src.controller.attodry800 import AttoDry800Controller
-
-# from src.AttoDRY import AttoDRY, Cryostats
-
-from src.dummies.dummycontroller import DummyAttoDRY
 
 
 class CryoWidget(QWidget):
@@ -44,11 +37,7 @@ class CryoWidget(QWidget):
         self.serial_port = None
         self.log_file_location = None
 
-        # self.attodry_controller = AttoDRY(
-        #     setup_version=Cryostats.ATTODRY800, com_port=None
-        # )
         self.controller = AttoDry800Controller()
-        self.attodry_controller = DummyAttoDRY()
         self.is_connected = False
         self.action_monitor = QTextEdit()
         self.port_combo = QComboBox()
@@ -60,10 +49,7 @@ class CryoWidget(QWidget):
         self.heater_power_canvas = PlotWidget(title="Heater Power")
         self.turbo_pump_canvas = PlotWidget(title="Turbo Pump Frequency")
 
-        self.logging_timer = QTimer()
-        self.logging_timer.timeout.connect(self.get_values)
-
-        self.canvases: list[PlotWidget] = [
+        self.canvases: List[PlotWidget] = [
             self.stage_temp_canvas,
             self.stage_pressure_canvas,
             self.cold_temp_canvas,
@@ -100,11 +86,13 @@ class CryoWidget(QWidget):
             widget.setEnabled(False)
 
         self.controller.updatedValues.connect(self.plot_data)
-        self.controller.updatedValues.connect(self.log_data)
+        self.controller.statusUpdated.connect(self.action_monitor.append)
 
-        # self.timer = QTimer(self)
-        # self.timer.timeout.connect(self.read_and_log_data)
-        # self.log_file = None
+        self.controller_thread = QThread()
+        self.controller_thread.start()
+
+        self.controller.moveToThread(self.controller_thread)
+
 
     def init_ui(self):
         main_layout = QVBoxLayout()
@@ -117,11 +105,11 @@ class CryoWidget(QWidget):
 
         self.logging_interval_edit = QLineEdit("1000")
         self.logging_interval_edit.setToolTip("Needs to be bigger than 100ms")
-        self.logging_interval_edit.editingFinished.connect(
-            lambda: self.logging_timer.setInterval(
-                int(self.logging_interval_edit.text())
-            )
-        )
+        # self.logging_interval_edit.editingFinished.connect(
+        #     lambda: self.logging_timer.setInterval(
+        #         int(self.logging_interval_edit.text())
+        #     )
+        # )
         self.logging_interval_edit.inputRejected.connect(
             lambda: print("rejected", self.logging_interval_edit.hasAcceptableInput())
         )
@@ -136,7 +124,7 @@ class CryoWidget(QWidget):
         )
         self.logging_interval_edit.setEnabled(False)
 
-        self.connect_button.clicked.connect(self.connect_controller)
+        self.connect_button.clicked.connect(lambda: self.controller.connect_attodry(self.port_combo.currentText()))
 
         self.log_file_browse = QPushButton("Start Logging")
         self.log_file_browse.clicked.connect(self.logging_manager)
@@ -171,7 +159,7 @@ class CryoWidget(QWidget):
         controller_layout = QGridLayout()
         self.base_temperature_button = QPushButton("Base Temperature")
         self.base_temperature_button.clicked.connect(
-            self.attodry_controller.goToBaseTemperature
+            self.controller.attodry.goToBaseTemperature
         )
         controller_layout.addWidget(self.base_temperature_button, 0, 0)
 
@@ -280,7 +268,7 @@ class CryoWidget(QWidget):
                         f.flush()
                 self.log_file_browse.setText("Stop Logging")
                 self.log_file_location = filename
-                self.logging_timer.start(1000)
+                # self.logging_timer.start(1000)
                 self.file_locator.setEnabled(False)
                 self.logging_interval_edit.setEnabled(True)
                 self.action_monitor.append(f"Started logging to {filename}")
@@ -288,84 +276,31 @@ class CryoWidget(QWidget):
                 self.log_file_browse.setChecked(False)
         else:
             self.log_file_browse.setText("Start Logging")
-            self.logging_timer.stop()
+            # self.logging_timer.stop()
 
             self.action_monitor.append(f"Logging stopped")
             # self.log_file.close()
             # self.log_file = None
 
     def connect_controller(self):
-        serial_port = str(self.port_combo.currentText())
-        self.action_monitor.append(f"Connecting to serial port {serial_port}")
-        print(serial_port)
-        print(self.port_combo.currentIndex())
-        print(self.port_combo.currentData())
-        try:
-            self.attodry_controller.begin()
-            self.attodry_controller.Connect(serial_port)
-            # time.sleep(30)
-
-            for widget in self.findChildren(QWidget):
-                widget.setEnabled(True)
-            self.connect_button.setEnabled(False)
-            self.action_monitor.append(f"Connected to serial port {serial_port}")
-            self.is_connected = True
-        except Exception as e:
-            self.action_monitor.append(f"Failed to connect to serial port: {str(e)}")
+        for widget in self.findChildren(QWidget):
+            widget.setEnabled(True)
+        self.connect_button.setEnabled(False)
+        self.is_connected = True
 
     def disconnect_controller(self):
         try:
-            self.attodry_controller.Disconnect()
-            self.attodry_controller.end()
+            self.controller.disconnect_attodry()
             for widget in self.findChildren((QPushButton, QLineEdit)):
                 if widget == self.connect_button or widget == self.port_combo:
                     continue
                 widget.setEnabled(False)
             self.connect_button.setEnabled(True)
             self.action_monitor.append(f"Disconnected from serial port")
-            # self.timer.stop()
         except Exception as e:
             self.action_monitor.append(
                 f"Failed to disconnect from serial port: {str(e)}"
             )
-
-    def get_values(self):
-        for i in range(4):
-            try:
-                temperature = self.attodry_controller.getSampleTemperature()
-                pressure = self.attodry_controller.getPressure800()
-                lk_sample_temperature = self.attodry_controller.get4KStageTemperature()
-                heat_power = self.attodry_controller.getSampleHeaterPower()
-                turbo_pump_frequency = self.attodry_controller.GetTurbopumpFrequ800()
-
-                user_temperature = self.attodry_controller.getUserTemperature()
-
-                self.updatedUserTemperature.emit(user_temperature)
-
-                data = [
-                    temperature,
-                    pressure,
-                    lk_sample_temperature,
-                    heat_power,
-                    turbo_pump_frequency,
-                ]
-
-                self.user_temperature = user_temperature
-
-                # data = [
-                #     1 + random.random(),
-                #     2 + random.random(),
-                #     3 + random.random(),
-                #     4 + random.random(),
-                #     5 + random.random(),
-                # ]
-
-                self.updatedData.emit(data)
-                break
-            except Exception as e:
-                self.action_monitor.append(f"Failed to get values {e}")
-                self.action_monitor.append(f"Retrying {4-i} times in 1 second")
-                time.sleep(1)
 
     def plot_data(self, new_data_points):
         for data, data_point, plot_widget in zip(
