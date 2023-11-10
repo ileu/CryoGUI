@@ -27,24 +27,11 @@ from PyQt5.QtWidgets import (
 from pyqtgraph import PlotWidget
 import pyqtgraph as pg
 
+from src.controller.attodry800 import AttoDry800Controller
+
 # from src.AttoDRY import AttoDRY, Cryostats
 
 from src.dummies.dummycontroller import DummyAttoDRY
-
-
-class Messenger(QThread):
-    finished = pyqtSignal()
-    failed = pyqtSignal()
-
-    def __init__(self, device, message):
-        super().__init__()
-        self.device = device
-        self.message = message
-
-    def run(self):
-        pass
-        # try:
-        # self.device
 
 
 class CryoWidget(QWidget):
@@ -60,7 +47,7 @@ class CryoWidget(QWidget):
         # self.attodry_controller = AttoDRY(
         #     setup_version=Cryostats.ATTODRY800, com_port=None
         # )
-
+        self.controller = AttoDry800Controller()
         self.attodry_controller = DummyAttoDRY()
         self.is_connected = False
         self.action_monitor = QTextEdit()
@@ -112,8 +99,8 @@ class CryoWidget(QWidget):
                 continue
             widget.setEnabled(False)
 
-        self.updatedData.connect(self.plot_data)
-        self.updatedData.connect(self.log_data)
+        self.controller.updatedValues.connect(self.plot_data)
+        self.controller.updatedValues.connect(self.log_data)
 
         # self.timer = QTimer(self)
         # self.timer.timeout.connect(self.read_and_log_data)

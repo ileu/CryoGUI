@@ -39,7 +39,7 @@ line_edit_style_large = (
 
 
 class IncrementWidget(QWidget):
-    valueChanged = QtCore.pyqtSignal(float, str)
+    valueChanged = pyqtSignal(float, str)
 
     def __init__(
         self, parent: QWidget = None, title: str = "TEST", unit: str = "", **kwargs
@@ -50,8 +50,6 @@ class IncrementWidget(QWidget):
         self.input = QLineEdit()
         self.plus_button = QPushButton("+")
         self.minus_button = QPushButton("-")
-
-        self._callOnValueChanged = None
 
         self.initUI()
 
@@ -138,7 +136,7 @@ class IncrementWidget(QWidget):
 
 
 class SetWidget(QWidget):
-    valueChanged = QtCore.pyqtSignal(float)
+    valueChanged = pyqtSignal(float)
 
     def __init__(
         self, title="", symbols: int = 7, unit: str = "", bottom=0, top=60, **kwargs
@@ -158,13 +156,6 @@ class SetWidget(QWidget):
         self.initUI()
 
         self.valueChanged.connect(self.set_input_text)
-
-    def set_input_text(self, text):
-        if not isinstance(text, str):
-            text = str(text)
-
-        if not self.input.hasFocus():
-            self.input.setText(text)
 
     def initUI(self):
         self.input.setAlignment(Qt.AlignmentFlag.AlignRight)
@@ -198,6 +189,13 @@ class SetWidget(QWidget):
 
         main_layout.setAlignment(Qt.AlignmentFlag.AlignVCenter)
         self.setLayout(main_layout)
+
+    def set_input_text(self, text):
+        if not isinstance(text, str):
+            text = str(text)
+
+        if not self.input.hasFocus():
+            self.input.setText(text)
 
     def setValue(self, value=None):
         if not value:
