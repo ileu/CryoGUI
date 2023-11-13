@@ -96,7 +96,9 @@ class AttoDry800Controller(QObject):
 
         # you need to wait for initialization; if you just start sending
         # commands, the connection will be lost.
-        time.sleep(1.0)
+        time.sleep(15.0)
+        self.statusUpdated.emit(f"Connecting....")
+        time.sleep(15.0)
 
         initialized = self.attodry.isDeviceInitialised()
         connected = self.attodry.isDeviceConnected()

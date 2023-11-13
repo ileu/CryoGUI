@@ -102,7 +102,7 @@ class CryoWidget(QWidget):
         self.controller.connectedToInstrument.connect(self.connect_controller)
 
         self.port_combo.currentTextChanged.connect(self.controller.set_port)
-
+        self.controller.set_port(self.port_combo.currentText())
     def init_ui(self):
         main_layout = QVBoxLayout()
         self.setLayout(main_layout)
