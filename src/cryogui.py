@@ -55,6 +55,12 @@ class CryoWidget(QWidget):
             self.turbo_pump_canvas,
         ]
 
+        self.plot_thread = QThread()
+        self.plot_thread.start()
+
+        self.plot_worker = PlotWorker(self.plot_widgets, self)
+        self.plot_worker.moveToThread(self.plot_thread)
+
         self.data_names = [
             "Temperature",
             "Pressure",
@@ -97,7 +103,7 @@ class CryoWidget(QWidget):
             self.controller.attodry.goToBaseTemperature
         )
 
-        self.controller.updatedValues.connect(self.plot_data)
+        self.controller.updatedValues.connect(self.plot_worker.update)
         self.controller.statusUpdated.connect(self.action_monitor.append)
         self.controller.connectedToInstrument.connect(self.connect_controller)
 

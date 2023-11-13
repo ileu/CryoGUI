@@ -1,11 +1,13 @@
+from typing import List
+
 from PyQt5 import QtCore
-from pyqtgraph import PlotWidget
+from pyqtgraph import PlotWidget, mkPen
 
 
 class PlotWorker(QtCore.QObject):
     updatedValue = QtCore.pyqtSignal(float)
 
-    def __init__(self, plot_widget: PlotWidget, parent):
+    def __init__(self, plot_widgets: List[PlotWidget], parent):
         """
 
         :param plot_widget:
@@ -13,15 +15,19 @@ class PlotWorker(QtCore.QObject):
         """
         super().__init__()
 
-        self.plot_widget = plot_widget
+        self.plot_widgets = plot_widgets
         self.parent = parent
+        self.data = [[] for i in range(5)]
 
         self._ymin = -1
         self._ymax = 1
 
-    @QtCore.pyqtSlot(object, object)
-    def update(self, x_data, y_data):
-        self.plot_widget.plot(x_data, y_data)
+    @QtCore.pyqtSlot(list)
+    def update(self, y_datas):
+        for i, data, plot_widget in zip(range(5), y_datas, self.plot_widgets):
+            print(i, data)
+            self.data[i].append(data)
+            plot_widget.plot(self.data[i], clear=True, pen=mkPen("b"))
         # if self.parent.autoScale.isChecked():
         #     self.rescale_y(y_data)
         #
