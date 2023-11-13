@@ -94,6 +94,8 @@ class CryoWidget(QWidget):
         self.controller.updatedValues.connect(self.plot_data)
         self.controller.statusUpdated.connect(self.action_monitor.append)
 
+        self.port_combo.currentTextChanged.connect(self.controller.set_port)
+
     def init_ui(self):
         main_layout = QVBoxLayout()
         self.setLayout(main_layout)
@@ -252,7 +254,7 @@ class CryoWidget(QWidget):
                 f"{date}_log_file",
                 "Text Files (*.txt);; CSV (*.csv)",
             )
-            self.action_monitor.append(f"Got log file path: {filename}")
+            self.action_monitor.append(f"Log file path: {filename}")
             if filename:
                 self.file_locator.setText(filename)
                 if not os.path.exists(filename):
