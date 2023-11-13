@@ -24,7 +24,7 @@ class AttoDry800Controller(QObject):
 
     def __init__(self, setup_version=Cryostats.ATTODRY800, com_port=None):
         super().__init__()
-        self.attodry = AttoDRY(setup_version, com_port)
+        self.attodry = AttoDRY(setup_version=setup_version, com_port=com_port)
         self.value_getters = [
             self.attodry.getSampleTemperature,
             self.attodry.getPressure800,
@@ -33,16 +33,16 @@ class AttoDry800Controller(QObject):
             self.attodry.GetTurbopumpFrequ800,
             self.attodry.getUserTemperature,
         ]
-        self.refresh_thread = QThread()
-        self.refresh_thread.start()
-
-        self.refresh_timer = QTimer()
-        self.refresh_timer.setInterval(1000)
-        self.refresh_timer.timeout.connect(self.update_values)
-
-        self.refresh_timer.moveToThread(self.refresh_thread)
-
-        self.refresh_timer.start()
+        # self.refresh_thread = QThread()
+        # self.refresh_thread.start()
+        #
+        # self.refresh_timer = QTimer()
+        # self.refresh_timer.setInterval(1000)
+        # self.refresh_timer.timeout.connect(self.update_values)
+        #
+        # self.refresh_timer.moveToThread(self.refresh_thread)
+        #
+        # self.refresh_timer.start()
         self.port = com_port
 
     def set_port(self, port):
@@ -63,7 +63,7 @@ class AttoDry800Controller(QObject):
             for i in range(4):
                 try:
                     data.append(getter())
-                    continue
+                    break
                 except Exception as e:
                     logger.warning(f"Something went wrong {e}")
                     self.failedRequest.emit(str(e))
@@ -87,9 +87,8 @@ class AttoDry800Controller(QObject):
             logger.warning(f"Somthing went wrong {e}")
             self.failedRequest.emit(str(e))
 
-    def connect_attodry(self, com_port=None):
-        if com_port is None:
-            com_port = self.port
+    def connect_attodry(self):
+        com_port = self.port
         self.statusUpdated.emit(f"Connecting to serial port {com_port}")
         # try:
         self.attodry.begin()
@@ -123,3 +122,15 @@ class AttoDry800Controller(QObject):
         time.sleep(1)
 
         return True
+
+
+if __name__ == "__main__":
+    import sys
+    from PyQt5.QtWidgets import QApplication
+    from src.AttoDRY import Cryostats
+    from src.AttoDRY import AttoDRY
+
+    app = QApplication(sys.argv)
+    atto = AttoDry800Controller(setup_version=Cryostats.ATTODRY800)
+    atto.connect_attodry()
+    sys.exit(app.exec_())

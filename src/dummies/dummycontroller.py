@@ -67,7 +67,7 @@ class DummyAMC300Controller(DummyController):
 
 
 class DummyAttoDRY(DummyController):
-    def __init__(self, com_port=None):
+    def __init__(self, com_port=None, **kwargs):
         super().__init__()
         self.started = False
         self.connected = False

@@ -5,7 +5,7 @@ import time
 from typing import List
 
 import pyqtgraph as pg
-from PyQt5.QtCore import pyqtSignal, QThread
+from PyQt5.QtCore import pyqtSignal, QThread, QTimer
 from PyQt5.QtGui import QIntValidator
 from PyQt5.QtSerialPort import QSerialPortInfo
 from PyQt5.QtWidgets import (
@@ -24,6 +24,7 @@ from PyQt5.QtWidgets import (
 from pyqtgraph import PlotWidget
 
 from src.controller.attodry800 import AttoDry800Controller
+from src.controller.plotworker import PlotWorker
 
 
 class CryoWidget(QWidget):
@@ -46,7 +47,7 @@ class CryoWidget(QWidget):
         self.heater_power_canvas = PlotWidget(title="Heater Power")
         self.turbo_pump_canvas = PlotWidget(title="Turbo Pump Frequency")
 
-        self.canvases: List[PlotWidget] = [
+        self.plot_widgets: List[PlotWidget] = [
             self.stage_temp_canvas,
             self.stage_pressure_canvas,
             self.cold_temp_canvas,
@@ -85,6 +86,11 @@ class CryoWidget(QWidget):
 
         self.controller = AttoDry800Controller()
         self.controller.moveToThread(self.controller_thread)
+        self.port_combo.currentTextChanged.connect(self.controller.set_port)
+
+        self.update_timer = QTimer()
+        self.update_timer.setInterval(1000)
+        self.update_timer.timeout.connect(self.controller.update_values)
 
         self.connect_button.clicked.connect(self.controller.connect_attodry)
         self.base_temperature_button.clicked.connect(
@@ -93,6 +99,7 @@ class CryoWidget(QWidget):
 
         self.controller.updatedValues.connect(self.plot_data)
         self.controller.statusUpdated.connect(self.action_monitor.append)
+        self.controller.connectedToInstrument.connect(self.connect_controller)
 
         self.port_combo.currentTextChanged.connect(self.controller.set_port)
 
@@ -217,7 +224,7 @@ class CryoWidget(QWidget):
         main_layout.addLayout(control_layout)
         main_layout.addLayout(plot_layout)
 
-        for i, plot_widget in enumerate(self.canvases):
+        for i, plot_widget in enumerate(self.plot_widgets):
             plot_widget.showGrid(x=True, y=True, alpha=0.5)
             # plot_widget.getAxis("bottom").setLabel("Time", units="s")
             plot_widget.getAxis("left").setLabel(
@@ -237,7 +244,7 @@ class CryoWidget(QWidget):
                 "border: 2px solid gray; border-radius: 5px; padding: 2px; background-color: white"
             )
             if i != 0:
-                plot_widget.setXLink(self.canvases[0])
+                plot_widget.setXLink(self.plot_widgets[0])
 
     def logging_manager(self, running: bool = False):
         if running:
@@ -267,6 +274,7 @@ class CryoWidget(QWidget):
                 self.log_file_browse.setText("Stop Logging")
                 self.log_file_location = filename
                 # self.logging_timer.start(1000)
+                self.controller.updatedValues.connect(self.log_data)
                 self.file_locator.setEnabled(False)
                 self.logging_interval_edit.setEnabled(True)
                 self.action_monitor.append(f"Started logging to {filename}")
@@ -277,6 +285,7 @@ class CryoWidget(QWidget):
             # self.logging_timer.stop()
 
             self.action_monitor.append(f"Logging stopped")
+            self.controller.updatedValues.disconnect(self.log_data)
             # self.log_file.close()
             # self.log_file = None
 
@@ -284,6 +293,7 @@ class CryoWidget(QWidget):
         for widget in self.findChildren(QWidget):
             widget.setEnabled(True)
         self.connect_button.setEnabled(False)
+        self.update_timer.start()
 
     def disconnect_controller(self):
         try:
@@ -301,7 +311,7 @@ class CryoWidget(QWidget):
 
     def plot_data(self, new_data_points):
         for data, data_point, plot_widget in zip(
-            self.data, new_data_points, self.canvases
+            self.data, new_data_points, self.plot_widgets
         ):
             print(data_point)
             data.append(data_point)
