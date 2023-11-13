@@ -20,6 +20,7 @@ class AttoDry800Controller(QObject):
     pidValues = pyqtSignal(list)
     failedRequest = pyqtSignal(str)
     connectedToInstrument = pyqtSignal()
+    disconnectedInstrument = pyqtSignal()
     statusUpdated = pyqtSignal(str)
 
     def __init__(self, setup_version=Cryostats.ATTODRY800, com_port=None):
@@ -58,6 +59,7 @@ class AttoDry800Controller(QObject):
             return False
 
     def update_values(self):
+        self.statusUpdated.emit("Updating values")
         data = []
         for getter in self.value_getters:
             for i in range(4):
@@ -110,6 +112,7 @@ class AttoDry800Controller(QObject):
             print("something went wrong.")
             return False
         self.statusUpdated.emit(f"Connected to serial port {com_port}")
+        self.refresh_timer.start(1000)
         self.connectedToInstrument.emit()
         return True
         # except Exception as e:

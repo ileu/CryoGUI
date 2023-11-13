@@ -28,9 +28,6 @@ from src.controller.plotworker import PlotWorker
 
 
 class CryoWidget(QWidget):
-    updatedData = pyqtSignal(list)
-    updatedUserTemperature = pyqtSignal(float)
-
     def __init__(self, parent=None):
         super().__init__(parent=parent)
 
@@ -103,6 +100,7 @@ class CryoWidget(QWidget):
         self.update_timer.timeout.connect(self.controller.update_values)
 
         self.connect_button.clicked.connect(self.controller.connect_attodry)
+        self.disconnect_button.clicked.connect(self.controller.disconnect_attodry)
         self.base_temperature_button.clicked.connect(
             self.controller.attodry.goToBaseTemperature
         )
@@ -110,6 +108,7 @@ class CryoWidget(QWidget):
         self.controller.updatedValues.connect(self.plot_worker.update)
         self.controller.statusUpdated.connect(self.action_monitor.append)
         self.controller.connectedToInstrument.connect(self.connect_controller)
+        self.controller.disconnectedInstrument.connect(self.disconnect_controller)
 
         self.port_combo.currentTextChanged.connect(self.controller.set_port)
         self.controller.set_port(self.port_combo.currentText())
@@ -287,7 +286,7 @@ class CryoWidget(QWidget):
                 self.log_file_browse.setText("Stop Logging")
                 self.log_file_location = filename
                 # self.logging_timer.start(1000)
-                self.controller.updatedValues.connect(self.log_data)
+                # self.controller.updatedValues.connect(self.log_data)
                 self.file_locator.setEnabled(False)
                 self.logging_interval_edit.setEnabled(True)
                 self.action_monitor.append(f"Started logging to {filename}")
@@ -295,7 +294,6 @@ class CryoWidget(QWidget):
                 self.log_file_browse.setChecked(False)
         else:
             self.log_file_browse.setText("Start Logging")
-            # self.logging_timer.stop()
 
             self.action_monitor.append(f"Logging stopped")
             self.controller.updatedValues.disconnect(self.log_data)
@@ -306,6 +304,7 @@ class CryoWidget(QWidget):
         for widget in self.findChildren(QWidget):
             widget.setEnabled(True)
         self.connect_button.setEnabled(False)
+        self.controller.updatedValues.connect(self.plot_data)
         self.update_timer.start()
 
     def disconnect_controller(self):
@@ -315,7 +314,7 @@ class CryoWidget(QWidget):
                     continue
                 widget.setEnabled(False)
             self.connect_button.setEnabled(True)
-            self.action_monitor.append(f"Disconnected from serial port")
+            self.action_monitor.append(f"Disconnected from instrument")
         except Exception as e:
             self.action_monitor.append(
                 f"Failed to disconnect from serial port: {str(e)}"
