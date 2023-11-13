@@ -1,6 +1,8 @@
 import sys
 
+import numpy as np
 from PyQt5 import QtWidgets
+from PyQt5.QtCore import QThread, QTimer, pyqtSignal, QEventLoop
 from PyQt5.QtWidgets import (
     QFrame,
     QVBoxLayout,
@@ -17,9 +19,11 @@ import pyqtgraph as pg
 
 from src.amcgui import AMCGUI
 from src.ancgui import ANCGUI
+from src.controller.plotworker import PlotWorker
 
 
 class StageGui(QWidget):
+    updatePlot = pyqtSignal(list)
     def __init__(self, parent=None):
         super().__init__(parent)
         self.amc_widget = AMCGUI()
@@ -28,6 +32,7 @@ class StageGui(QWidget):
         self.power_plot = PlotWidget(title="SHOW ME THE POWAAA")
 
         self.power_meter = None
+        self.power_array = np.array([])
 
         self.power_meter_box = QComboBox()
         self.power_meter_channel_box = QComboBox()
@@ -58,8 +63,75 @@ class StageGui(QWidget):
         # # t_layout.addWidget()
         # self.power_frame.setLayout(t_layout)
 
+        self.plot_thread = QThread()
+        self.plot_worker = PlotWorker([self.power_plot], self)
+        self.plot_worker.moveToThread(self.plot_thread)
+        self.updatePlot.connect(self.plot_worker.update)
+
+        self.plot_timer = QTimer(self)
+        self.plot_timer.timeout.connect(self.plot_tick)
+        # self.plot_timer.start(int(1000/self.datarate))
+
+        # self.power_meter_controller.updatedValues.connect(self.plot_worker.update)
+
         self.init_ui()
 
+    def plot_tick(self):
+        if self.power_meter:
+            if hasattr(self.power_meter, 'instrument'):
+                wait = self.power_meter.instrument.waiting
+            else:
+                wait = self.power_meter.waiting
+            if not wait:
+                self.updatePower()
+                self.updatePlot.emit(self.power_array)
+            else:
+                loop = QEventLoop()
+                QTimer.singleShot(2000, loop.quit)
+                loop.exec()
+
+    def updatePower(self):
+        pow_curr = self.last_power
+        self.power_array = np.append(self.power_array, pow_curr)
+        # datapoints = len(self.power_array)
+        # if datapoints > self.datapoints:
+        #     self.power_array = self.power_array[-int(self.datapoints):]
+
+    def connect_pm(self, pm, channel=0):
+        if hasattr(pm, 'is_multichannel') and pm.is_multichannel:
+
+            if channel == 1:
+                pm = pm.ch2
+            elif channel == 0:
+                pm = pm.ch1
+            elif channel == 2:
+                pm = pm.ch3
+            else:
+                pm = pm.ch4
+
+        self.power_meter = pm
+
+        # if self.outputstage:
+        #     self._enable_optimize_buttons(type=self.cpl_type['out'], side='out')
+        # if self.inputstage:
+        #     self._enable_optimize_buttons(type=self.cpl_type['in'], side='in')
+
+        # self.plotWorker = PlotWorker(self.mplWidget, self)
+        # self.updatePlot.connect(self.plotWorker.update)
+        # self.rescalePlot.connect(self.plotWorker.rescale_y)
+        # self.plotWorker.moveToThread(self.plotThread)
+
+        # if not hasattr(self, 'pm_reader'):
+        #     self.pm_reader = PowermeterReader(self.pm)
+        #     self.pm_reader.signal.currentPower.connect(
+        #         lambda value: self.__setattr__('last_power', value)
+        #         )
+        #     self.threadPool.start(self.pm_reader)
+        # else:
+        #     self.pm_reader.pm = self.pm
+        #     self.pm_reader.initialize()
+        #
+        # self.plotThread.start()
     def init_ui(self):
         self.power_frame.setObjectName("power_frame")
         self.power_frame.setStyleSheet(

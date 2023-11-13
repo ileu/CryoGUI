@@ -47,6 +47,12 @@ class CryoWidget(QWidget):
         self.heater_power_canvas = PlotWidget(title="Heater Power")
         self.turbo_pump_canvas = PlotWidget(title="Turbo Pump Frequency")
 
+        self.user_temperature = 4
+
+        self.p_value = 0
+        self.i_value = 0
+        self.d_value = 0
+
         self.plot_widgets: List[PlotWidget] = [
             self.stage_temp_canvas,
             self.stage_pressure_canvas,
@@ -56,7 +62,6 @@ class CryoWidget(QWidget):
         ]
 
         self.plot_thread = QThread()
-        self.plot_thread.start()
 
         self.plot_worker = PlotWorker(self.plot_widgets, self)
         self.plot_worker.moveToThread(self.plot_thread)
@@ -88,7 +93,6 @@ class CryoWidget(QWidget):
             widget.setEnabled(False)
 
         self.controller_thread = QThread()
-        self.controller_thread.start()
 
         self.controller = AttoDry800Controller()
         self.controller.moveToThread(self.controller_thread)
@@ -109,6 +113,9 @@ class CryoWidget(QWidget):
 
         self.port_combo.currentTextChanged.connect(self.controller.set_port)
         self.controller.set_port(self.port_combo.currentText())
+
+        self.plot_thread.start()
+        self.controller_thread.start()
     def init_ui(self):
         main_layout = QVBoxLayout()
         self.setLayout(main_layout)
@@ -128,7 +135,7 @@ class CryoWidget(QWidget):
         self.logging_interval_edit.inputRejected.connect(
             lambda: print("rejected", self.logging_interval_edit.hasAcceptableInput())
         )
-        # self.logging_interval_edit.sele
+
         self.logging_interval_edit.setValidator(QIntValidator(bottom=500))
         self.logging_interval_edit.editingFinished.connect(
             lambda: self.logging_interval_edit.setStyleSheet(
@@ -303,7 +310,6 @@ class CryoWidget(QWidget):
 
     def disconnect_controller(self):
         try:
-            self.controller.disconnect_attodry()
             for widget in self.findChildren((QPushButton, QLineEdit)):
                 if widget == self.connect_button or widget == self.port_combo:
                     continue
