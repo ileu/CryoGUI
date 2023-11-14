@@ -24,6 +24,7 @@ from src.controller.plotworker import PlotWorker
 
 class StageGui(QWidget):
     updatePlot = pyqtSignal(list)
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self.amc_widget = AMCGUI()
@@ -32,6 +33,8 @@ class StageGui(QWidget):
         self.power_plot = PlotWidget(title="SHOW ME THE POWAAA")
 
         self.power_meter = None
+        self.last_power = 0
+        self.PM_ALLOWED = ["PM100D", "N7747"]
         self.power_array = np.array([])
 
         self.power_meter_box = QComboBox()
@@ -78,7 +81,7 @@ class StageGui(QWidget):
 
     def plot_tick(self):
         if self.power_meter:
-            if hasattr(self.power_meter, 'instrument'):
+            if hasattr(self.power_meter, "instrument"):
                 wait = self.power_meter.instrument.waiting
             else:
                 wait = self.power_meter.waiting
@@ -98,8 +101,7 @@ class StageGui(QWidget):
         #     self.power_array = self.power_array[-int(self.datapoints):]
 
     def connect_pm(self, pm, channel=0):
-        if hasattr(pm, 'is_multichannel') and pm.is_multichannel:
-
+        if hasattr(pm, "is_multichannel") and pm.is_multichannel:
             if channel == 1:
                 pm = pm.ch2
             elif channel == 0:
@@ -132,6 +134,12 @@ class StageGui(QWidget):
         #     self.pm_reader.initialize()
         #
         # self.plotThread.start()
+
+    def disconnect_pm(self):
+        self.plot_thread.exit()
+        self.pm_reader.kill()
+        self.power_meter = None
+
     def init_ui(self):
         self.power_frame.setObjectName("power_frame")
         self.power_frame.setStyleSheet(

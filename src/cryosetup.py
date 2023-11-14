@@ -25,6 +25,7 @@ from src.ancgui import ANCGUI
 from src.controller import AMC300Controller
 from src.couplingwidget import CouplingWidget
 from src.cryogui import CryoWidget
+from src.stagegui import StageGui
 
 
 class CryoSetup(WindowSidebarTabs):
@@ -61,7 +62,7 @@ class CryoSetup(WindowSidebarTabs):
         self.tab.setLayout(tab1_layout)
         self.tabWidget.setTabText(0, "Cryo Control")
 
-        self.stage_widget = CouplingWidget()
+        self.stage_widget = StageGui()
         tab2_layout = QtWidgets.QVBoxLayout()
         tab2_layout.addWidget(self.stage_widget)
         self.tab_2.setLayout(tab2_layout)
@@ -95,17 +96,16 @@ class CryoSetup(WindowSidebarTabs):
             self.laser_scanner.connect_laser(inst)
         if type(inst).__name__ in self.laser_scanner.PM_ALLOWED:
             self.laser_scanner.connect_pm(inst)
-        # for tab in self.tabs:
-        #     if type(inst).__name__ in self.tab.PM_ALLOWED:
-        #         self.tab.boxPMChoice.addItems([inst.name + " (" + inst.address + ")"])
-        #         self.tab.boxPMChoice.adjustSize()
-        #         if not self.tab.pm:
-        #             self.tab.connect_pm(inst)
-        #             self.tab.boxPMChoice.setCurrentIndex(
-        #                 self.tab.boxPMChoice.findText(
-        #                     inst.name + " (" + inst.address + ")"
-        #                 )
-        #             )
+        if type(inst).__name__ in self.stage_widget.PM_ALLOWED:
+            self.stage_widget.power_meter_box.addItems(
+                [inst.name + " (" + inst.address + ")"]
+            )
+            self.stage_widget.power_meter_box.adjustSize()
+            if not self.stage_widget.power_meter:
+                self.stage_widget.connect_pm(inst)
+                self.stage_widget.power_meter_box.setCurrentIndex(
+                    self.tab.boxPMChoice.findText(inst.name + " (" + inst.address + ")")
+                )
         #     if type(inst).__name__ in self.tab.SAMPLE_ALLOWED:
         #         self.tab.boxSampleChoice.addItems(
         #             [inst.name + " (" + inst.address + ")"]
@@ -121,12 +121,14 @@ class CryoSetup(WindowSidebarTabs):
 
     def instrument_disconnected(self, inst):
         self.inst_control.remove_instrument_tab(inst.address)
-        #     if type(inst).__name__ in self.tab1.PM_ALLOWED:
-        #         print("disconect")
-        #         self.tab1.boxPMChoice.removeItem(
-        #             self.tab1.boxPMChoice.findText(inst.name + " (" + inst.address + ")")
-        #         )
-        #         self.tab1.disconnect_pm()
+        if type(inst).__name__ in self.stage_widget.PM_ALLOWED:
+            print("disconect")
+            self.stage_widget.power_meter_box.removeItem(
+                self.stage_widget.power_meter_box.findText(
+                    inst.name + " (" + inst.address + ")"
+                )
+            )
+            self.stage_widget.disconnect_pm()
         #     if type(inst).__name__ in self.tab1.SAMPLE_ALLOWED:
         #         self.tab1.boxSampleChoice.removeItem(
         #             self.tab1.boxSampleChoice.findText(
