@@ -1,19 +1,13 @@
 import sys
-import threading
-import time
-from typing import List
 
-from PyQt5.QtCore import pyqtSignal, QThread, QObject, QTimer, Qt
+from PyQt5.QtCore import pyqtSignal, QThread
 from PyQt5.QtWidgets import (
     QApplication,
     QMainWindow,
     QVBoxLayout,
     QWidget,
     QInputDialog,
-    QLabel,
-    QFrame,
     QPushButton,
-    QAction,
     QLineEdit,
     QHBoxLayout,
     QRadioButton,

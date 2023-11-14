@@ -97,18 +97,18 @@ class AttoDry800Controller(QObject):
 
         # you need to wait for initialization; if you just start sending
         # commands, the connection will be lost.
-        time.sleep(1.0)
+        time.sleep(15.0)
         self.statusUpdated.emit(f"Connecting....")
-        time.sleep(1.0)
+        time.sleep(15.0)
 
         initialized = self.attodry.isDeviceInitialised()
         connected = self.attodry.isDeviceConnected()
 
         # state that it is initialized and connected:
         if initialized and connected:
-            print("The AttoDRY device is initialized and connected")
+            self.statusUpdated.emit("The AttoDRY device is initialized and connected")
         else:
-            print("something went wrong.")
+            self.statusUpdated.emit("something went wrong.")
             return False
         self.statusUpdated.emit(f"Connected to serial port {com_port}")
         self.refresh_timer.start(1000)
@@ -120,7 +120,9 @@ class AttoDry800Controller(QObject):
         # return False
 
     def disconnect_attodry(self):
+        time.sleep(2)
         self.attodry.Disconnect()
+        time.sleep(0.5)
         self.attodry.end()
 
         time.sleep(1)

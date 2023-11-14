@@ -104,7 +104,7 @@ class CryoSetup(WindowSidebarTabs):
             if not self.stage_widget.power_meter:
                 self.stage_widget.connect_pm(inst)
                 self.stage_widget.power_meter_box.setCurrentIndex(
-                    self.tab.boxPMChoice.findText(inst.name + " (" + inst.address + ")")
+                    self.stage_widget.power_meter_box.findText(inst.name + " (" + inst.address + ")")
                 )
         #     if type(inst).__name__ in self.tab.SAMPLE_ALLOWED:
         #         self.tab.boxSampleChoice.addItems(
