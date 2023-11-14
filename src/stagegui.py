@@ -1,7 +1,7 @@
 import sys
 
 import numpy as np
-from PyQt5 import QtWidgets
+import pyqtgraph as pg
 from PyQt5.QtCore import QThread, QTimer, pyqtSignal, QEventLoop
 from PyQt5.QtWidgets import (
     QFrame,
@@ -10,12 +10,10 @@ from PyQt5.QtWidgets import (
     QWidget,
     QApplication,
     QComboBox,
-    QLineEdit,
     QLabel,
     QDoubleSpinBox,
 )
 from pyqtgraph import PlotWidget
-import pyqtgraph as pg
 
 from src.amcgui import AMCGUI
 from src.ancgui import ANCGUI
@@ -68,7 +66,7 @@ class StageGui(QWidget):
         # self.power_frame.setLayout(t_layout)
 
         self.plot_thread = QThread()
-        self.plot_worker = PlotWorker([self.power_plot], self)
+        self.plot_worker = PlotWorker([self.power_plot], self, ["Power"], ["W"])
         self.plot_worker.moveToThread(self.plot_thread)
         self.updatePlot.connect(self.plot_worker.update)
 
@@ -173,12 +171,12 @@ class StageGui(QWidget):
         self.power_frame.layout().addLayout(power_setting_layout)
         self.power_frame.layout().addWidget(self.power_plot)
 
-        self.power_plot.setYRange(-1, 1)
-        self.power_plot.showGrid(x=True, y=True, alpha=0.5)
-        self.power_plot.getAxis("bottom").setLabel("Time", units="s")
-        self.power_plot.getAxis("left").setLabel("POWER", units="W")
-        self.power_plot.getAxis("bottom").setPen(pg.mkPen(color="k"))
-        self.power_plot.getAxis("left").setPen(pg.mkPen(color="k"))
+        # self.power_plot.setYRange(-1, 1)
+        self.power_plot.showGrid(x=True, y=True, alpha=0.1)
+        # self.power_plot.getAxis("bottom").setLabel("Time", units="s")
+        # self.power_plot.getAxis("left").setLabel("POWER", units="W")
+        # self.power_plot.getAxis("bottom").setPen(pg.mkPen(color="k"))
+        # self.power_plot.getAxis("left").setPen(pg.mkPen(color="k"))
         # self.power_plot.showAxis("right")
         # self.power_plot.getAxis("right").setStyle(showValues=False)
         # self.power_plot.getAxis("right").setPen(pg.mkPen(color="k"))

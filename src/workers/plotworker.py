@@ -33,9 +33,12 @@ class PlotWorker(QtCore.QObject):
         self.data_names = data_names
         self.data_units = data_units
 
+        self._ymin = -1
+        self._ymax = 1
+
         for i, plot_widget in enumerate(self.plot_widgets):
             self.data.append([])
-            plot_widget.showGrid(x=True, y=True, alpha=0.5)
+            plot_widget.showGrid(x=True, y=True, alpha=0.1)
             # plot_widget.getAxis("bottom").setLabel("Time", units="s")
             plot_widget.getAxis("left").setLabel(
                 self.data_names[i] + f" / {self.data_units[i]}"
@@ -49,23 +52,29 @@ class PlotWorker(QtCore.QObject):
             plot_widget.getAxis("top").setStyle(showValues=False)
             plot_widget.getAxis("top").setPen(mkPen(color="k"))
             plot_widget.setBackground("w")  # White background
-            plot_widget.getPlotItem().setContentsMargins(0, 50, 25, 10)
-            plot_widget.setStyleSheet(
-                "border: 1px solid gray; border-radius: 5px; padding: 2px; background-color: white"
-            )
+            plot_widget.getPlotItem().setContentsMargins(0, 0, 25, 10)
+            # plot_widget.setStyleSheet(
+            #     "border: 0px solid gray; border-radius: 5px; padding: 2px; background-color: white"
+            # )
+            plot_widget.setStyleSheet("background-color: white")
             if i != 0:
                 plot_widget.setXLink(self.plot_widgets[0])
-
-        self._ymin = -1
-        self._ymax = 1
 
     @QtCore.pyqtSlot(list)
     def update(self, y_datas):
         for i, data, plot_widget in zip(range(5), y_datas, self.plot_widgets):
             self.data[i].append(data)
             plot_widget.plot(self.data[i], clear=True, pen=mkPen("b"))
-        # if self.parent.autoScale.isChecked():
-        #     self.rescale_y(y_data)
+
+            if self.data_names[i] == "Power":
+                if data <= 1e-4:
+                    plot_widget.ax.set_title(
+                        str(int(data[-1] * 100 * 1e6) / 100) + " pW"
+                    )
+                elif data <= 1e-1:
+                    plot_widget.set_title(str(int(data[-1] * 100 * 1e3) / 100) + " nW")
+                elif data <= 1e2:
+                    plot_widget.set_title(str(int(data[-1] * 100) / 100) + " uW")
         #
         # if y_data[-1] <= 1e-4:
         #     self.wdg.canvas.ax.set_title(str(int(y_data[-1] * 100 * 1e6) / 100) + " pW")
