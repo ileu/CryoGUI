@@ -60,11 +60,16 @@ class PlotWorker(QtCore.QObject):
             if i != 0:
                 plot_widget.setXLink(self.plot_widgets[0])
 
-    @QtCore.pyqtSlot(list)
+    @QtCore.pyqtSlot(object)
     def update(self, y_datas):
-        for i, data, plot_widget in zip(range(5), y_datas, self.plot_widgets):
-            self.data[i].append(data)
-            plot_widget.plot(self.data[i], clear=True, pen=mkPen("b"))
+        for i, data, plot_widget in zip(
+            range(len(self.plot_widgets)), y_datas, self.plot_widgets
+        ):
+            # self.data[i].append(data)
+            plot_widget.plot(data, clear=True, pen=mkPen("b"))
+            # plot_widget.enableAutoRange("x")
+            plot_widget.setYRange(min(data), max(data))
+            print(min(data), max(data))
 
             # if self.data_names[i] == "Power":
             #     item = plot_widget.getPlotItem()

@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 class AttoDry800Controller(QObject):
-    updatedValues = pyqtSignal(list)
+    updatedValues = pyqtSignal(object)
     pidValues = pyqtSignal(list)
     failedRequest = pyqtSignal(str)
     connectedToInstrument = pyqtSignal()

@@ -21,7 +21,7 @@ from src.workers import PlotWorker
 
 
 class StageGui(QWidget):
-    updatePlot = pyqtSignal(list)
+    updatePlot = pyqtSignal(object)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -72,9 +72,11 @@ class StageGui(QWidget):
 
         self.plot_timer = QTimer(self)
         self.plot_timer.timeout.connect(self.plot_tick)
-        # self.plot_timer.start(int(1000/self.datarate))
+        self.plot_timer.setInterval(int(1000 / self.power_meter_rate.value()))
 
         # self.power_meter_controller.updatedValues.connect(self.plot_worker.update)
+
+        self.plot_thread.start()
 
         self.init_ui()
 
@@ -86,14 +88,15 @@ class StageGui(QWidget):
                 wait = self.power_meter.waiting
             if not wait:
                 self.updatePower()
-                self.updatePlot.emit(self.power_array)
+                self.updatePlot.emit([self.power_array])
             else:
                 loop = QEventLoop()
                 QTimer.singleShot(2000, loop.quit)
                 loop.exec()
 
     def updatePower(self):
-        pow_curr = self.last_power
+        print("POWER")
+        pow_curr = self.power_meter.power_uW
         self.power_array = np.append(self.power_array, pow_curr)
         # datapoints = len(self.power_array)
         # if datapoints > self.datapoints:
@@ -111,6 +114,13 @@ class StageGui(QWidget):
                 pm = pm.ch4
 
         self.power_meter = pm
+
+        if hasattr(self.power_meter, "instrument"):
+            self.power_meter.instrument.waiting = False
+        else:
+            self.power_meter.waiting = False
+
+        self.plot_timer.start()
 
         # if self.outputstage:
         #     self._enable_optimize_buttons(type=self.cpl_type['out'], side='out')

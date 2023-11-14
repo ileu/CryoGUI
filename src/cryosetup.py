@@ -44,7 +44,6 @@ class CryoSetup(WindowSidebarTabs):
             "ANC300Controller": ANC300Controller,
             "AMC300Controller": AMC300Controller,
         }
-        self.inst_connection.InstrumentConnected.connect(self.instrument_connected)
         self.inst_control = InstrumentControlWidget(parent=self)
 
         self.inst_connection.InstrumentConnected.connect(self.instrument_connected)
@@ -104,7 +103,9 @@ class CryoSetup(WindowSidebarTabs):
             if not self.stage_widget.power_meter:
                 self.stage_widget.connect_pm(inst)
                 self.stage_widget.power_meter_box.setCurrentIndex(
-                    self.stage_widget.power_meter_box.findText(inst.name + " (" + inst.address + ")")
+                    self.stage_widget.power_meter_box.findText(
+                        inst.name + " (" + inst.address + ")"
+                    )
                 )
         #     if type(inst).__name__ in self.tab.SAMPLE_ALLOWED:
         #         self.tab.boxSampleChoice.addItems(
