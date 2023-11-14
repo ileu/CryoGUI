@@ -116,6 +116,8 @@ class CryoWidget(QWidget):
         self.port_combo.currentTextChanged.connect(self.controller.set_port)
         self.controller.set_port(self.port_combo.currentText())
 
+        self.controller.updatedValues.connect(self.plot_worker.update)
+
         self.controller_thread.start()
 
     def init_ui(self):
@@ -279,13 +281,14 @@ class CryoWidget(QWidget):
         for widget in self.findChildren(QWidget):
             widget.setEnabled(True)
         self.connect_button.setEnabled(False)
-        self.controller.updatedValues.connect(self.plot_worker.update)
 
         self.plot_thread.start()
         self.update_timer.start()
 
     def disconnect_controller(self):
         try:
+            self.update_timer.stop()
+            self.controller.disconnect_attodry()
             for widget in self.findChildren((QPushButton, QLineEdit)):
                 if widget == self.connect_button or widget == self.port_combo:
                     continue

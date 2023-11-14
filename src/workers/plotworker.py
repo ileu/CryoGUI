@@ -66,27 +66,23 @@ class PlotWorker(QtCore.QObject):
             self.data[i].append(data)
             plot_widget.plot(self.data[i], clear=True, pen=mkPen("b"))
 
-            if self.data_names[i] == "Power":
-                if data <= 1e-4:
-                    plot_widget.ax.set_title(
-                        str(int(data[-1] * 100 * 1e6) / 100) + " pW"
-                    )
-                elif data <= 1e-1:
-                    plot_widget.set_title(str(int(data[-1] * 100 * 1e3) / 100) + " nW")
-                elif data <= 1e2:
-                    plot_widget.set_title(str(int(data[-1] * 100) / 100) + " uW")
-        #
-        # if y_data[-1] <= 1e-4:
-        #     self.wdg.canvas.ax.set_title(str(int(y_data[-1] * 100 * 1e6) / 100) + " pW")
-        # elif y_data[-1] <= 1e-1:
-        #     self.wdg.canvas.ax.set_title(str(int(y_data[-1] * 100 * 1e3) / 100) + " nW")
-        # elif y_data[-1] <= 1e2:
-        #     self.wdg.canvas.ax.set_title(str(int(y_data[-1] * 100) / 100) + " uW")
-        # else:
-        #     self.wdg.canvas.ax.set_title(
-        #         str(int(y_data[-1] * 100 * 1e-3) / 100) + " mW"
-        #     )
-        #
+            # if self.data_names[i] == "Power":
+            #     item = plot_widget.getPlotItem()
+            #     if data <= 1e-4:
+            #         item.titleLabel.item.setText(
+            #             str(int(data * 100 * 1e6) / 100) + " pW"
+            #         )
+            #     elif data <= 1e-1:
+            #         item.titleLabel.item.setText(
+            #             str(int(data * 100 * 1e3) / 100) + " nW"
+            #         )
+            #     elif data <= 1e2:
+            #         item.titleLabel.item.setText(str(int(data * 100) / 100) + " uW")
+            #     else:
+            #         item.titleLabel.item.setText(
+            #             str(int(data * 100 * 1e-3) / 100) + " mW"
+            #         )
+
         # self.wdg.canvas.ax.set_xlabel("Time [s]")
         # self.wdg.canvas.ax.set_ylabel("Power [uW]")
         # self.wdg.canvas.ax.set_ylim(self._ymin, self._ymax)

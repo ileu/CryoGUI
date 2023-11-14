@@ -59,7 +59,6 @@ class AttoDry800Controller(QObject):
             return False
 
     def update_values(self):
-        self.statusUpdated.emit("Updating values")
         data = []
         for getter in self.value_getters:
             for i in range(4):

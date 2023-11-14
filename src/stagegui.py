@@ -28,7 +28,7 @@ class StageGui(QWidget):
         self.amc_widget = AMCGUI()
         self.anc_widget = ANCGUI()
         self.power_frame = QFrame()
-        self.power_plot = PlotWidget(title="SHOW ME THE POWAAA")
+        self.power_plot = PlotWidget(title="SHOW ME THE POWER")
 
         self.power_meter = None
         self.last_power = 0
