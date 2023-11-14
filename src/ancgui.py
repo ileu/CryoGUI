@@ -73,10 +73,10 @@ class ANCGUI(InstrumentWidget):
         mainLayout.addLayout(buttonLayout)
 
         self.axis = [
-            # "RZ",
-            # "RY",
-            # "RX",
-            # "LZ",
+            "RZ",
+            "RY",
+            "RX",
+            "LZ",
             "LY",
             "LX",
         ]

@@ -34,12 +34,12 @@ class AttoDry800Controller(QObject):
             self.attodry.GetTurbopumpFrequ800,
             self.attodry.getUserTemperature,
         ]
-        # self.refresh_thread = QThread()
-        # self.refresh_thread.start()
-        #
-        # self.refresh_timer = QTimer()
-        # self.refresh_timer.setInterval(1000)
-        # self.refresh_timer.timeout.connect(self.update_values)
+        self.refresh_thread = QThread()
+        self.refresh_thread.start()
+
+        self.refresh_timer = QTimer()
+        self.refresh_timer.setInterval(1000)
+        self.refresh_timer.timeout.connect(self.update_values)
         #
         # self.refresh_timer.moveToThread(self.refresh_thread)
         #

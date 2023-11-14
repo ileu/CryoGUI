@@ -19,7 +19,7 @@ import pyqtgraph as pg
 
 from src.amcgui import AMCGUI
 from src.ancgui import ANCGUI
-from src.controller.plotworker import PlotWorker
+from src.workers import PlotWorker
 
 
 class StageGui(QWidget):
@@ -34,7 +34,7 @@ class StageGui(QWidget):
 
         self.power_meter = None
         self.last_power = 0
-        self.PM_ALLOWED = ["PM100D", "N7747"]
+        self.PM_ALLOWED = ["PM100D", "N7744C"]
         self.power_array = np.array([])
 
         self.power_meter_box = QComboBox()
@@ -46,6 +46,7 @@ class StageGui(QWidget):
         self.power_meter_channel_box.addItem("Choose Channel")
         self.power_meter_channel_box.addItem("Channel 1")
         self.power_meter_channel_box.addItem("Channel 2")
+        self.power_meter_channel_box.currentTextChanged.connect(self.change_channel)
 
         self.power_meter_rate = QDoubleSpinBox()
         self.power_meter_rate.setSuffix(" Hz")
@@ -137,8 +138,21 @@ class StageGui(QWidget):
 
     def disconnect_pm(self):
         self.plot_thread.exit()
-        self.pm_reader.kill()
+        # self.pm_reader.kill()
         self.power_meter = None
+
+    def change_channel(self, identifier):
+        # print(identifier)
+        # identifier2 = self.power_meter_channel_box.currentText()
+        # address = identifier2[identifier2.find("(") + 1 : -1]
+        pm = self.power_meter
+        self.disconnect_pm()
+
+        if identifier == "Channel 1":
+            channel = 0
+        else:
+            channel = 1
+        self.connect_pm(pm, channel=channel)
 
     def init_ui(self):
         self.power_frame.setObjectName("power_frame")
