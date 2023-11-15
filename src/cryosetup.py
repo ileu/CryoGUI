@@ -1,8 +1,7 @@
 import os
 import sys
 
-import onglabsuite
-from PyQt5 import QtWidgets, QtCore
+from PyQt5 import QtWidgets
 from onglabsuite.instruments.keysight.n7744c import N7744C
 from onglabsuite.instruments.keysight.n7776c import N7776C
 from onglabsuite.instruments.thorlabs.pm100d import PM100D
@@ -16,14 +15,9 @@ from onglabsuite.interfaces.smaract_setup.widgets.InstrumentControl import (
 from onglabsuite.interfaces.smaract_setup.widgets.LaserScanning import (
     LaserScanningWidget,
 )
-import pyqtgraph as pg
 from pymeasure.instruments.attocube import ANC300Controller
-from pyqtgraph import PlotWidget
 
-from src.amcgui import AMCGUI
-from src.ancgui import ANCGUI
 from src.controller import AMC300Controller
-from src.couplingwidget import CouplingWidget
 from src.cryogui import CryoWidget
 from src.stagegui import StageGui
 
