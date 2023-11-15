@@ -238,7 +238,7 @@ def main():
     # olw = OpenLoopWidget(axis=DummyAxis(), title="Test", lock_optimize_on_start=False)
     olw = OpenLoopWidget(lock_optimize_on_start=True)
     olw.connect_axis(DummyOpenLoopAxis())
-    olw.controller.start_refresh_timer()
+    # olw.controller.start_refresh_timer()
     olw.show()
     app.exec()
 

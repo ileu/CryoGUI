@@ -22,8 +22,11 @@ class OpenLoopController(QObject):
 
     def refresh(self):
         # print("refresh")
+        start_time = time.time()
         self.update_mode()
+        print(f"refresh took {time.time() - start_time} seconds")
         self.update_values()
+        print(f"refresh took {time.time() - start_time} seconds")
 
     def toggle_activation(self, b: bool):
         self.activated = b
