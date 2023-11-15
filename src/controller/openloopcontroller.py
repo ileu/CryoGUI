@@ -22,11 +22,8 @@ class OpenLoopController(QObject):
 
     def refresh(self):
         # print("refresh")
-        start_time = time.time()
         self.update_mode()
-        print(f"refresh took {time.time() - start_time} seconds")
         self.update_values()
-        print(f"refresh took {time.time() - start_time} seconds")
 
     def toggle_activation(self, b: bool):
         self.activated = b
@@ -67,9 +64,9 @@ class OpenLoopController(QObject):
 
         try:
             if direction in ["up", "+"]:
-                self.axis.stepu = value
+                self.axis.move_raw(value)
             elif direction in ["down", "-"]:
-                self.axis.stepd = value
+                self.axis.move_raw(-value)
             else:
                 logger.warning(f"Invalid direction {direction}")
             self.statusUpdated.emit("Ready")

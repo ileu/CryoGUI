@@ -91,9 +91,9 @@ class ANCGUI(InstrumentWidget):
         self.setLayout(mainLayout)
         self.controller_thread.start()
 
-        self.refresh_timer = QTimer()
-        self.refresh_timer.setInterval(10000)
-        self.refresh_timer.timeout.connect(self.refresh.emit)
+        # self.refresh_timer = QTimer()
+        # self.refresh_timer.setInterval(10000)
+        # self.refresh_timer.timeout.connect(self.refresh.emit)
 
     def connect_instrument(
         self, address: str = None, axis: list = None, passwd: str = "123456"
@@ -113,12 +113,12 @@ class ANCGUI(InstrumentWidget):
             axis = self.axis
 
         try:
-            ancController = DummyANC300Controller(
-                adapter=address, axisnames=axis, passwd=passwd
-            )
-            # ancController: ANC300Controller = ANC300Controller(
+            # ancController = DummyANC300Controller(
             #     adapter=address, axisnames=axis, passwd=passwd
             # )
+            ancController: ANC300Controller = ANC300Controller(
+                adapter=address, axisnames=axis, passwd=passwd
+            )
         except Exception as e:
             logger.error(f"Connection failed: {e}")
             self.statusUpdated.emit(f"Connection failed: {e}")
@@ -140,7 +140,7 @@ class ANCGUI(InstrumentWidget):
 
         logger.info("ANC300 initialized")
         self.refresh.emit()
-        self.refresh_timer.start()
+        # self.refresh_timer.start()
         return True
 
     def ground_all(self):

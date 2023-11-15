@@ -34,12 +34,13 @@ class AttoDry800Controller(QObject):
             self.attodry.GetTurbopumpFrequ800,
             self.attodry.getUserTemperature,
         ]
-        self.refresh_thread = QThread()
-        self.refresh_thread.start()
+        self.has_begun = False
+        # self.refresh_thread = QThread()
+        # self.refresh_thread.start()
 
-        self.refresh_timer = QTimer()
-        self.refresh_timer.setInterval(1000)
-        self.refresh_timer.timeout.connect(self.update_values)
+        # self.refresh_timer = QTimer()
+        # self.refresh_timer.setInterval(1000)
+        # self.refresh_timer.timeout.connect(self.update_values)
         #
         # self.refresh_timer.moveToThread(self.refresh_thread)
         #
@@ -93,17 +94,24 @@ class AttoDry800Controller(QObject):
         self.statusUpdated.emit(f"Connecting to serial port {com_port}")
         # try:
         self.attodry.begin()
+        self.has_begun = True
         self.attodry.Connect(com_port)
 
         # you need to wait for initialization; if you just start sending
         # commands, the connection will be lost.
         time.sleep(15.0)
         self.statusUpdated.emit(f"Connecting....")
-        time.sleep(15.0)
-
-        initialized = self.attodry.isDeviceInitialised()
-        connected = self.attodry.isDeviceConnected()
-
+        for i in range(5):
+            try:
+                initialized = self.attodry.isDeviceInitialised()
+                connected = self.attodry.isDeviceConnected()
+                break
+            except Exception as e:
+                print(f"Something went wrong {e}")
+                time.sleep(5)
+        else:
+            self.statusUpdated.emit(f"Failed to connect to serial port {com_port}")
+            return False
         # state that it is initialized and connected:
         if initialized and connected:
             self.statusUpdated.emit("The AttoDRY device is initialized and connected")
@@ -111,7 +119,7 @@ class AttoDry800Controller(QObject):
             self.statusUpdated.emit("something went wrong.")
             return False
         self.statusUpdated.emit(f"Connected to serial port {com_port}")
-        self.refresh_timer.start(1000)
+        # self.refresh_timer.start(1000)
         self.connectedToInstrument.emit()
         return True
         # except Exception as e:
@@ -120,14 +128,20 @@ class AttoDry800Controller(QObject):
         # return False
 
     def disconnect_attodry(self):
-        time.sleep(2)
+        self.statusUpdated.emit("Disconnecting...")
+        # self.refresh_timer.stop()
+        time.sleep(1.5)
         self.attodry.Disconnect()
+
+        self.disconnectedInstrument.emit()
+        return True
+
+    def end_controller(self):
+        if not self.has_begun:
+            return
+        print("Ending the controller")
         time.sleep(0.5)
         self.attodry.end()
-
-        time.sleep(1)
-
-        return True
 
 
 if __name__ == "__main__":

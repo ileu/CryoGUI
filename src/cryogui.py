@@ -5,7 +5,7 @@ import time
 from typing import List
 
 import pyqtgraph as pg
-from PyQt5.QtCore import QThread, QTimer
+from PyQt5.QtCore import QThread, QTimer, pyqtSignal
 from PyQt5.QtGui import QIntValidator
 from PyQt5.QtSerialPort import QSerialPortInfo
 from PyQt5.QtWidgets import (
@@ -28,6 +28,7 @@ from src.workers import PlotWorker, LogWorker
 
 
 class CryoWidget(QWidget):
+    disconnectReady = pyqtSignal()
     def __init__(self, parent=None):
         super().__init__(parent=parent)
 
@@ -85,6 +86,10 @@ class CryoWidget(QWidget):
         self.data = [[] for i in range(5)]
         self.user_temperature = 4
 
+        self.controller_thread = QThread()
+        self.controller = AttoDry800Controller()
+        self.controller.moveToThread(self.controller_thread)
+
         self.init_ui()
 
         for widget in self.findChildren((QPushButton, QLineEdit)):
@@ -92,10 +97,6 @@ class CryoWidget(QWidget):
                 continue
             widget.setEnabled(False)
 
-        self.controller_thread = QThread()
-
-        self.controller = AttoDry800Controller()
-        self.controller.moveToThread(self.controller_thread)
         self.port_combo.currentTextChanged.connect(self.controller.set_port)
 
         self.update_timer = QTimer()
@@ -103,12 +104,13 @@ class CryoWidget(QWidget):
         self.update_timer.timeout.connect(self.controller.update_values)
 
         self.connect_button.clicked.connect(self.controller.connect_attodry)
+        self.disconnect_button.clicked.connect(self.update_timer.stop)
         self.disconnect_button.clicked.connect(self.controller.disconnect_attodry)
         self.base_temperature_button.clicked.connect(
             self.controller.attodry.goToBaseTemperature
         )
 
-        # self.controller.updatedValues.connect(self.plot_worker.update)
+        self.controller.updatedValues.connect(self.plot_worker.update)
         self.controller.statusUpdated.connect(self.action_monitor.append)
         self.controller.connectedToInstrument.connect(self.connect_controller)
         self.controller.disconnectedInstrument.connect(self.disconnect_controller)
@@ -116,8 +118,9 @@ class CryoWidget(QWidget):
         self.port_combo.currentTextChanged.connect(self.controller.set_port)
         self.controller.set_port(self.port_combo.currentText())
 
-        self.controller.updatedValues.connect(self.plot_worker.update)
-
+        self.controller_thread.finished.connect(self.controller.end_controller)
+        self.controller_thread.finished.connect(self.controller_thread.deleteLater)
+        self.controller_thread.finished.connect(self.controller.deleteLater)
         self.controller_thread.start()
 
     def init_ui(self):
@@ -158,7 +161,6 @@ class CryoWidget(QWidget):
 
         self.disconnect_button = QPushButton("Disconnect")
         self.disconnect_button.setEnabled(False)
-        self.disconnect_button.clicked.connect(self.disconnect_controller)
 
         setup_layout.addWidget(QLabel("Serial Port"), 0, 0)
         setup_layout.addWidget(self.port_combo, 0, 1)
@@ -186,7 +188,7 @@ class CryoWidget(QWidget):
         controller_layout.addWidget(self.base_temperature_button, 0, 0)
 
         self.heat_up_button = QPushButton("Heat Up")
-        # self.heat_up_button.clicked.connect(self.attodry_controller.startSampleExchange)
+        self.heat_up_button.clicked.connect(self.controller.attodry.startSampleExchange)
         controller_layout.addWidget(self.heat_up_button, 1, 0)
 
         self.temperature_control_button = QPushButton("Activate Temperature control")
@@ -209,17 +211,17 @@ class CryoWidget(QWidget):
         # controller_layout.addWidget(self.d_edit, 2, 5)
 
         self.break_valve_button = QPushButton("Break Sample Valve")
-        # self.break_valve_button.clicked.connect(
-        #     self.attodry_controller.toggleBreakVac800Valve
-        # )
+        self.break_valve_button.clicked.connect(
+            self.controller.attodry.toggleBreakVac800Valve
+        )
         # controller_layout.addWidget(self.break_valve_button, 0, 6)
 
         self.confirm_button = QPushButton("Confirm")
-        # self.confirm_button.clicked.connect(self.attodry_controller.Confirm)
+        self.confirm_button.clicked.connect(self.controller.attodry.Confirm)
         controller_layout.addWidget(self.confirm_button, 0, 3)
 
         self.cancel_button = QPushButton("Cancel")
-        # self.cancel_button.clicked.connect(self.attodry_controller.Cancel)
+        self.cancel_button.clicked.connect(self.controller.attodry.Cancel)
         controller_layout.addWidget(self.cancel_button, 0, 4)
 
         plot_layout = QGridLayout()
@@ -259,16 +261,18 @@ class CryoWidget(QWidget):
             self.action_monitor.append(f"Log file path: {filename}")
             if filename:
                 self.log_worker.set_filename(filename)
-
+                self.file_locator.setText(filename)
                 self.log_file_browse.setText("Stop Logging")
                 self.controller.updatedValues.connect(self.log_worker.update)
                 self.file_locator.setEnabled(False)
                 self.logging_interval_edit.setEnabled(True)
                 self.action_monitor.append(f"Started logging to {filename}")
+                self.log_thread.start()
             else:
                 self.log_file_browse.setChecked(False)
         else:
             self.log_file_browse.setText("Start Logging")
+            self.file_locator.setEnabled(True)
 
             self.action_monitor.append(f"Logging stopped")
             self.controller.updatedValues.disconnect(self.log_worker.update)
@@ -287,8 +291,6 @@ class CryoWidget(QWidget):
 
     def disconnect_controller(self):
         try:
-            self.update_timer.stop()
-            self.controller.disconnect_attodry()
             for widget in self.findChildren((QPushButton, QLineEdit)):
                 if widget == self.connect_button or widget == self.port_combo:
                     continue
@@ -321,6 +323,23 @@ class CryoWidget(QWidget):
     #         line += ",".join(map(str, new_data_points))
     #         f.write(line + "\n")
     #         f.flush()
+
+    def closeEvent(self, *args, **kwargs):
+        super().closeEvent(*args, **kwargs)
+        print("closing")
+        self.update_timer.stop()
+
+        self.plot_thread.exit()
+        self.plot_thread.wait()
+        print("plot thread closed")
+
+        self.log_thread.exit()
+        self.log_thread.wait()
+        print("log thread closed")
+
+        self.controller_thread.exit()
+        self.controller_thread.wait()
+        print("controller thread closed")
 
 
 if __name__ == "__main__":

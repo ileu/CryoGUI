@@ -53,23 +53,23 @@ class PlotWorker(QtCore.QObject):
             plot_widget.getAxis("top").setPen(mkPen(color="k"))
             plot_widget.setBackground("w")  # White background
             plot_widget.getPlotItem().setContentsMargins(0, 0, 25, 10)
+            plot_widget.enableAutoRange(x=True, y=True)
             # plot_widget.setStyleSheet(
             #     "border: 0px solid gray; border-radius: 5px; padding: 2px; background-color: white"
             # )
             plot_widget.setStyleSheet("background-color: white")
-            if i != 0:
-                plot_widget.setXLink(self.plot_widgets[0])
+            # if i != 0:
+            #     plot_widget.setXLink(self.plot_widgets[0])
 
     @QtCore.pyqtSlot(object)
     def update(self, y_datas):
         for i, data, plot_widget in zip(
             range(len(self.plot_widgets)), y_datas, self.plot_widgets
         ):
-            # self.data[i].append(data)
-            plot_widget.plot(data, clear=True, pen=mkPen("b"))
+            self.data[i].append(data)
+            plot_widget.plot(self.data[i], clear=True, pen=mkPen("b"))
             # plot_widget.enableAutoRange("x")
-            plot_widget.setYRange(min(data), max(data))
-            print(min(data), max(data))
+            plot_widget.setYRange(min(self.data[i]), max(self.data[i]))
 
             # if self.data_names[i] == "Power":
             #     item = plot_widget.getPlotItem()

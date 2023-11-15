@@ -72,9 +72,9 @@ class LogWorker(QObject):
             "a",
         ) as f:
             if print_header:
-                f.write("time," + ",".join(self.data_names) + f",{self.remark}" "\n")
+                f.write("time," + ",".join(self.data_names) + f",remarks" "\n")
                 f.flush()
-            line = str(time.time())
+            line = f"{time.time()},"
             line += ",".join(map(str, new_data_points))
             line += f",{self.remark}"
             f.write(line + "\n")
