@@ -1,8 +1,7 @@
 import sys
 
 import numpy as np
-import pyqtgraph as pg
-from PyQt5.QtCore import QThread, QTimer, pyqtSignal, QEventLoop
+from PyQt5.QtCore import QThread, QTimer, pyqtSignal, QEventLoop, QThreadPool
 from PyQt5.QtWidgets import (
     QFrame,
     QVBoxLayout,
@@ -12,6 +11,9 @@ from PyQt5.QtWidgets import (
     QComboBox,
     QLabel,
     QDoubleSpinBox,
+)
+from onglabsuite.interfaces.smaract_setup.widgets.WaveguideCoupling import (
+    PowermeterReader,
 )
 from pyqtgraph import PlotWidget
 
@@ -34,6 +36,8 @@ class StageGui(QWidget):
         self.last_power = 0
         self.PM_ALLOWED = ["PM100D", "N7744C"]
         self.power_array = np.array([])
+
+        self.threadPool = QThreadPool.globalInstance()
 
         self.power_meter_box = QComboBox()
         self.power_meter_channel_box = QComboBox()
@@ -95,8 +99,7 @@ class StageGui(QWidget):
                 loop.exec()
 
     def updatePower(self):
-        print("POWER")
-        pow_curr = self.power_meter.power_uW
+        pow_curr = self.last_power
         self.power_array = np.append(self.power_array, pow_curr)
         # datapoints = len(self.power_array)
         # if datapoints > self.datapoints:
@@ -120,7 +123,7 @@ class StageGui(QWidget):
         else:
             self.power_meter.waiting = False
 
-        self.plot_timer.start()
+        # self.plot_timer.start()
 
         # if self.outputstage:
         #     self._enable_optimize_buttons(type=self.cpl_type['out'], side='out')
@@ -132,21 +135,21 @@ class StageGui(QWidget):
         # self.rescalePlot.connect(self.plotWorker.rescale_y)
         # self.plotWorker.moveToThread(self.plotThread)
 
-        # if not hasattr(self, 'pm_reader'):
-        #     self.pm_reader = PowermeterReader(self.pm)
-        #     self.pm_reader.signal.currentPower.connect(
-        #         lambda value: self.__setattr__('last_power', value)
-        #         )
-        #     self.threadPool.start(self.pm_reader)
-        # else:
-        #     self.pm_reader.pm = self.pm
-        #     self.pm_reader.initialize()
-        #
+        if not hasattr(self, "pm_reader"):
+            self.pm_reader = PowermeterReader(self.power_meter)
+            self.pm_reader.signal.currentPower.connect(
+                lambda value: self.__setattr__("last_power", value)
+            )
+            self.threadPool.start(self.pm_reader)
+        else:
+            self.pm_reader.pm = self.power_meter
+            self.pm_reader.initialize()
+
         # self.plotThread.start()
 
     def disconnect_pm(self):
         self.plot_thread.exit()
-        # self.pm_reader.kill()
+        self.pm_reader.kill()
         self.power_meter = None
 
     def change_channel(self, identifier):

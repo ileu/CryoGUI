@@ -25,16 +25,8 @@ class AMCGUI(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent=parent)
         self.ip_address = None
-        self.amcController = None
-
-        # self.setWindowTitle("AMC300 Controller ANCGUI")
-
-        # self.central_widget = QWidget(self)
-        # self.setCentralWidget(self.central_widget)
-
-        # Create main layout
+        self.controller = AMC300Controller("")
         mainlayout = QVBoxLayout()
-        # self.statusBar().showMessage("Disconnected")
 
         self.axis_widgets: List[ClosedLoopWidget] = []
 
@@ -47,14 +39,7 @@ class AMCGUI(QWidget):
             ax.deactivate()
             mainlayout.addWidget(ax)
 
-        self.connect_action = QAction("Connect", self)
-        self.disconnect_action = QAction("Disconnect", self)
-
         self.setLayout(mainlayout)
-
-        self.update_thread = None
-        self.update_thread_running = False
-        self.is_connected = False
 
     def show_connect_dialog(self):
         ipaddress, ok = QInputDialog.getText(
@@ -69,13 +54,12 @@ class AMCGUI(QWidget):
 
     def connect(self, ip_address):
         self.ip_address = ip_address
-        self.amcController = AMC300Controller(ip_address)
-        connected = self.amcController.connect()
-
-        if not connected:
-            self.statusUpdated.emit("Connection failed to " + ip_address)
-            self.is_connected = False
-            return
+        self.controller.ip = ip_address
+        #
+        # if not connected:
+        #     self.statusUpdated.emit("Connection failed to " + ip_address)
+        #     self.is_connected = False
+        #     return
 
         self.statusUpdated.emit("Connected to " + ip_address)
         self.is_connected = True

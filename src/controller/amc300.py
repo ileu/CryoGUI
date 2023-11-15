@@ -1,31 +1,41 @@
 from typing import List
 
+from PyQt5.QtCore import QObject, pyqtSignal
+
 from src.controller._quantities import PositionQty
 from src.controller.amclib.AMC import Device
 
 
-class AMC300Controller:
+class AMC300Controller(QObject):
+    deviceConnected = pyqtSignal()
+    deviceDisconnected = pyqtSignal()
+    statusUpdated = pyqtSignal(str)
+
     def __init__(self, ip):
+        super().__init__()
         self.ip = ip
-
         self.device = Device(ip)
-
         self.axes: List[Axis] = []
 
         self.connected = False
 
     def connect(self):
+        if not self.ip:
+            self.statusUpdated.emit("No IP address given")
+            return False
+
         try:
             self.device.connect()
         except Exception as e:
             print(e)
+            self.statusUpdated.emit(f"Error during connection: {e}")
             return False
         self.connected = True
+        self.deviceConnected.emit()
 
         for i in range(3):
             self.axes.append(Axis(i, self.device))
-            # self.axes[i].position()  # update the position of the axis
-
+        self.statusUpdated.emit("Connected")
         return True
 
     def disconnect(self):
@@ -43,6 +53,8 @@ class AMC300Controller:
         except Exception as e:
             print(e)
             return False
+        self.statusUpdated.emit("Disconnected")
+        self.deviceDisconnected.emit()
         return True
 
 
