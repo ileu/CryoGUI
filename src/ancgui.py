@@ -92,7 +92,7 @@ class ANCGUI(InstrumentWidget):
         self.controller_thread.start()
 
         self.refresh_timer = QTimer()
-        self.refresh_timer.setInterval(1000)
+        self.refresh_timer.setInterval(10000)
         self.refresh_timer.timeout.connect(self.refresh.emit)
 
     def connect_instrument(

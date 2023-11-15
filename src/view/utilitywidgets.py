@@ -293,7 +293,7 @@ class ControlBar(QWidget):
 
     def set_capacity(self, capacity: float):
         logger.debug(f"Set capacity to {capacity}")
-        self.capacity_button.setText(f"{int(capacity)}")
+        self.capacity_button.setText(f"Cap: {int(capacity)} nF")
 
     @QtCore.pyqtSlot(bool)
     def toggle_activation(self, movable):
