@@ -1,6 +1,6 @@
 import sys
 
-from PyQt5.QtCore import pyqtSignal, QThread
+from PyQt5.QtCore import pyqtSignal, QThread, QTimer
 from PyQt5.QtWidgets import (
     QApplication,
     QMainWindow,
@@ -29,6 +29,7 @@ logger = logging.getLogger(__name__)
 
 class ANCGUI(InstrumentWidget):
     connected = pyqtSignal(bool)
+    refresh = pyqtSignal()
 
     def __init__(self, parent=None):
         super().__init__(parent=parent)
@@ -77,7 +78,6 @@ class ANCGUI(InstrumentWidget):
         self.axis_widgets = {}
 
         self.controller_thread = QThread()
-        self.controller_thread.start()
 
         for axi in self.axis:
             controller = OpenLoopController(axis=None)
@@ -89,11 +89,11 @@ class ANCGUI(InstrumentWidget):
             mainLayout.addWidget(ax_widget)
 
         self.setLayout(mainLayout)
+        self.controller_thread.start()
 
-    def refresh(self):
-        for ax_wid in self.axis_widgets.values():
-            ax_wid.controller.update_values()
-            ax_wid.controller.update_mode()
+        self.refresh_timer = QTimer()
+        self.refresh_timer.setInterval(1000)
+        self.refresh_timer.timeout.connect(self.refresh.emit)
 
     def connect_instrument(
         self, address: str = None, axis: list = None, passwd: str = "123456"
@@ -131,6 +131,7 @@ class ANCGUI(InstrumentWidget):
         for axis_widget in self.axis_widgets.values():
             axis_widget.connect_axis(getattr(ancController, axis_widget.title))
             axis_widget.activate()
+            self.refresh.connect(axis_widget.controller.refresh)
 
         # self.axis_widgets["LX"].connect_keys("a", "d")
         # self.axis_widgets["LY"].connect_keys("w", "s")
@@ -138,9 +139,8 @@ class ANCGUI(InstrumentWidget):
         # self.axis_widgets["RY"].connect_keys("down", "up")
 
         logger.info("ANC300 initialized")
-        # self.refresh_timer.start()
-        self.refresh()
-        self.connected.emit(True)
+        self.refresh.emit()
+        self.refresh_timer.start()
         return True
 
     def ground_all(self):

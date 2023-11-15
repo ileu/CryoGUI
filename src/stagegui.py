@@ -37,14 +37,12 @@ class StageGui(QWidget):
         self.PM_ALLOWED = ["PM100D", "N7744C"]
         self.power_array = np.array([])
 
-        self.threadPool = QThreadPool.globalInstance()
-
         self.power_meter_box = QComboBox()
+        self.power_meter_box.addItem("Choose Instrument")
+        self.power_meter_box.currentTextChanged.connect(self.change_power_meter)
+
         self.power_meter_channel_box = QComboBox()
         self.power_meter_channel_box.setEnabled(False)
-
-        self.power_meter_box.addItem("Choose Instrument")
-
         self.power_meter_channel_box.addItem("Choose Channel")
         self.power_meter_channel_box.addItem("Channel 1")
         self.power_meter_channel_box.addItem("Channel 2")
@@ -56,6 +54,10 @@ class StageGui(QWidget):
         self.power_meter_rate.setRange(1, 1000)
         self.power_meter_rate.setValue(20)
         self.power_meter_rate.setButtonSymbols(QDoubleSpinBox.NoButtons)
+        self.power_meter_rate.valueChanged.connect(
+            lambda value: self.plot_timer.setInterval(int(1000 / value))
+        )
+        self.power_meter_rate.setEnabled(False)
 
         self.power_meter_wavelength = QDoubleSpinBox()
         self.power_meter_wavelength.setSuffix(" nm")
@@ -63,12 +65,9 @@ class StageGui(QWidget):
         self.power_meter_wavelength.setRange(0, 2000)
         self.power_meter_wavelength.setValue(1550.0)
         self.power_meter_wavelength.setButtonSymbols(QDoubleSpinBox.NoButtons)
+        self.power_meter_wavelength.setEnabled(False)
 
-        # t_layout = QVBoxLayout()
-        # t_layout.setContentsMargins(0, 0, 0, 0)
-        # # t_layout.addWidget()
-        # self.power_frame.setLayout(t_layout)
-
+        self.threadPool = QThreadPool.globalInstance()
         self.plot_thread = QThread()
         self.plot_worker = PlotWorker([self.power_plot], self, ["Power"], ["W"])
         self.plot_worker.moveToThread(self.plot_thread)
@@ -77,6 +76,7 @@ class StageGui(QWidget):
         self.plot_timer = QTimer(self)
         self.plot_timer.timeout.connect(self.plot_tick)
         self.plot_timer.setInterval(int(1000 / self.power_meter_rate.value()))
+        self.plot_timer.start()
 
         # self.power_meter_controller.updatedValues.connect(self.plot_worker.update)
 
@@ -100,7 +100,7 @@ class StageGui(QWidget):
 
     def updatePower(self):
         pow_curr = self.last_power
-        self.power_array = np.append(self.power_array, pow_curr)
+        self.power_array = np.append(self.power_array[-100:], pow_curr)
         # datapoints = len(self.power_array)
         # if datapoints > self.datapoints:
         #     self.power_array = self.power_array[-int(self.datapoints):]
@@ -122,8 +122,6 @@ class StageGui(QWidget):
             self.power_meter.instrument.waiting = False
         else:
             self.power_meter.waiting = False
-
-        # self.plot_timer.start()
 
         # if self.outputstage:
         #     self._enable_optimize_buttons(type=self.cpl_type['out'], side='out')
@@ -149,21 +147,54 @@ class StageGui(QWidget):
 
     def disconnect_pm(self):
         self.plot_thread.exit()
+        self.plot_thread.wait()
         self.pm_reader.kill()
         self.power_meter = None
 
-    def change_channel(self, identifier):
-        # print(identifier)
-        # identifier2 = self.power_meter_channel_box.currentText()
-        # address = identifier2[identifier2.find("(") + 1 : -1]
-        pm = self.power_meter
-        self.disconnect_pm()
+    def change_power_meter(self, identifier):
+        if identifier == "Choose Instrument":
+            print("no pm")
+            self.power_meter_channel_box.setEnabled(False)
+            if self.power_meter:
+                print("no pm disconnected")
+                self.disconnect_pm()
+                return False
 
-        if identifier == "Channel 1":
-            channel = 0
+        address = identifier[identifier.find("(") + 1 : -1]
+
+        if self.power_meter and self.power_meter.address == address:
+            print("no change")
+            return False
+        elif self.power_meter:
+            print("if pm true")
+            if self.power_meter_channel_box.currentText() == "CH1":
+                channel = 0
+            elif self.power_meter_channel_box.currentText() == "CH2":
+                channel = 1
+            elif self.power_meter_channel_box.currentText() == "CH3":
+                channel = 2
+            elif self.power_meter_channel_box.currentText() == "CH4":
+                channel = 3
+            # TODO: reconnecting
+            # self.connect_pm(self.parent.inst_connection.connected_instruments[address],channel=channel)
         else:
-            channel = 1
-        self.connect_pm(pm, channel=channel)
+            # reconecting
+
+            if self.power_meter_channel_box.currentText() == "CH1":
+                channel = 0
+            elif self.power_meter_channel_box.currentText() == "CH2":
+                channel = 1
+            elif self.power_meter_channel_box.currentText() == "CH3":
+                channel = 2
+            elif self.power_meter_channel_box.currentText() == "CH4":
+                channel = 3
+
+            # self.connect_pm(self.parent.inst_connection.connected_instruments[address],channel=channel)
+
+    def change_channel(self, identifier):
+        identifier2 = self.power_meter_channel_box.currentText()
+        self.disconnect_pm()
+        self.change_power_meter(identifier2)
 
     def init_ui(self):
         self.power_frame.setObjectName("power_frame")
@@ -184,20 +215,9 @@ class StageGui(QWidget):
         self.power_frame.layout().addLayout(power_setting_layout)
         self.power_frame.layout().addWidget(self.power_plot)
 
-        # self.power_plot.setYRange(-1, 1)
         self.power_plot.showGrid(x=True, y=True, alpha=0.1)
-        # self.power_plot.getAxis("bottom").setLabel("Time", units="s")
-        # self.power_plot.getAxis("left").setLabel("POWER", units="W")
-        # self.power_plot.getAxis("bottom").setPen(pg.mkPen(color="k"))
-        # self.power_plot.getAxis("left").setPen(pg.mkPen(color="k"))
-        # self.power_plot.showAxis("right")
-        # self.power_plot.getAxis("right").setStyle(showValues=False)
-        # self.power_plot.getAxis("right").setPen(pg.mkPen(color="k"))
-        # self.power_plot.showAxis("top")
-        # self.power_plot.getAxis("top").setStyle(showValues=False)
-        # self.power_plot.getAxis("top").setPen(pg.mkPen(color="k"))
         self.power_plot.setBackground("w")
-        self.power_plot.setXRange(0, 1)
+        self.power_plot.enableAutoRange(x=True, y=True)
 
         stage_layout = QGridLayout()
         stage_layout.addWidget(self.anc_widget, 0, 0, 2, 1)

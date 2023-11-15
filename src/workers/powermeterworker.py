@@ -16,6 +16,12 @@ class PowerMeterWorker(QObject):
         else:
             self.power_meter.waiting = False
 
+    def kill(self):
+        if hasattr(self.power_meter, "instrument"):
+            self.power_meter.instrument.waiting = True
+        else:
+            self.power_meter.waiting = True
+
     def run(self):
         while True:
             if hasattr(self.power_meter, "instrument"):

@@ -191,7 +191,6 @@ class OpenLoopWidget(QFrame):
         # self.cmove_up_button.released.connect(
         #     lambda: self.controller.step_axis(1, "down")
         # )
-        self.controller.start_refresh_timer()
         self.activate()
         self.controller.statusUpdated.emit("Ready")
 

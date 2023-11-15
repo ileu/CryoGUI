@@ -18,30 +18,10 @@ class OpenLoopController(QObject):
     def __init__(self, axis=None, parent=None):
         super().__init__(parent)
         self.axis = axis
-        self.refresh_timer = None
         self.activated = False
 
-    # def __getattribute__(self, item):
-    #     if item != "axis" and self.axis is None:
-    #         print("Cant do a thing with no axis")
-    #         print("Set axis first")
-    #         return None
-    #
-    #     return super().__getattribute__(item)
-
-    def start_refresh_timer(self):
-        if self.refresh_timer is None:
-            self.refresh_timer = QTimer(self)
-
-        self.refresh_timer.timeout.connect(self.refresh)
-
-        self.refresh_timer.start(500)
-
-    def stop_refresh_timer(self):
-        self.refresh_timer.stop()
-
     def refresh(self):
-        print(threading.current_thread().name)
+        # print("refresh")
         self.update_mode()
         self.update_values()
 
