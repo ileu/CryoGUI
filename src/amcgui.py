@@ -13,7 +13,7 @@ from PyQt5.QtWidgets import (
 )
 from src.view import ClosedLoopWidget
 
-# from controller import AMC300Controller
+from controller import AMC300Controller
 
 
 from src.dummies.dummycontroller import DummyAMC300Controller as AMC300Controller
@@ -29,10 +29,11 @@ class AMCGUI(QWidget):
         mainlayout = QVBoxLayout()
 
         self.axis_widgets: List[ClosedLoopWidget] = []
+        axis_title = ["X-Axis", "Y-Axis", "Z-Axis"]
 
         for i in range(3):
             self.axis_widgets.append(
-                ClosedLoopWidget(title=f"Axis {i}", unit=r" um", symbols=7)
+                ClosedLoopWidget(title=axis_title[i], unit=r" um", symbols=7)
             )
 
         for ax in self.axis_widgets:

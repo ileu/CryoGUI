@@ -27,7 +27,7 @@ class StageGui(QWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.amc_widget = AMCGUI()
+        # self.amc_widget = AMCGUI()
         self.anc_widget = ANCGUI()
         self.power_frame = QFrame()
         self.power_plot = PlotWidget(title="SHOW ME THE POWER")
@@ -222,7 +222,7 @@ class StageGui(QWidget):
         stage_layout = QGridLayout()
         stage_layout.addWidget(self.anc_widget, 0, 0, 2, 1)
         stage_layout.addWidget(self.power_frame, 0, 1, 1, 1)
-        stage_layout.addWidget(self.amc_widget, 1, 1, 1, 1)
+        # stage_layout.addWidget(self.amc_widget, 1, 1, 1, 1)
 
         self.setLayout(stage_layout)
 
