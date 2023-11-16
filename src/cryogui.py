@@ -1,10 +1,8 @@
 import datetime
 import os
 import sys
-import time
 from typing import List
 
-import pyqtgraph as pg
 from PyQt5.QtCore import QThread, QTimer, pyqtSignal
 from PyQt5.QtGui import QIntValidator
 from PyQt5.QtSerialPort import QSerialPortInfo
@@ -24,11 +22,12 @@ from PyQt5.QtWidgets import (
 from pyqtgraph import PlotWidget
 
 from src.controller.attodry800 import AttoDry800Controller
-from src.workers import PlotWorker, LogWorker
+from src.workers import LogWorker
 
 
 class CryoWidget(QWidget):
     disconnectReady = pyqtSignal()
+
     def __init__(self, parent=None):
         super().__init__(parent=parent)
 
@@ -51,11 +50,11 @@ class CryoWidget(QWidget):
         self.d_value = 0
 
         self.plot_widgets: List[PlotWidget] = [
-            self.stage_temp_canvas,
-            self.stage_pressure_canvas,
-            self.cold_temp_canvas,
-            self.heater_power_canvas,
-            self.turbo_pump_canvas,
+            self.stage_temp_canvas.getPlotItem(),
+            self.stage_pressure_canvas.getPlotItem(),
+            self.cold_temp_canvas.getPlotItem(),
+            self.heater_power_canvas.getPlotItem(),
+            self.turbo_pump_canvas.getPlotItem(),
         ]
 
         data_names = [
@@ -74,10 +73,10 @@ class CryoWidget(QWidget):
             "turbo-pump-freq_Hz",
         ]
 
-        self.plot_thread = QThread()
-
-        self.plot_worker = PlotWorker(self.plot_widgets, self, data_names, data_units)
-        self.plot_worker.moveToThread(self.plot_thread)
+        # self.plot_thread = QThread()
+        #
+        # self.plot_worker = PlotWorker(self.plot_widgets, self, data_names, data_units)
+        # self.plot_worker.moveToThread(self.plot_thread)
 
         self.log_thread = QThread()
         self.log_worker = LogWorker("", self, data_titles)
@@ -110,7 +109,7 @@ class CryoWidget(QWidget):
             self.controller.attodry.goToBaseTemperature
         )
 
-        self.controller.updatedValues.connect(self.plot_worker.update)
+        self.controller.updatedValues.connect(self.plot_data)
         self.controller.statusUpdated.connect(self.action_monitor.append)
         self.controller.connectedToInstrument.connect(self.connect_controller)
         self.controller.disconnectedInstrument.connect(self.disconnect_controller)
@@ -286,7 +285,7 @@ class CryoWidget(QWidget):
             widget.setEnabled(True)
         self.connect_button.setEnabled(False)
 
-        self.plot_thread.start()
+        # self.plot_thread.start()
         self.update_timer.start()
 
     def disconnect_controller(self):
@@ -302,17 +301,15 @@ class CryoWidget(QWidget):
                 f"Failed to disconnect from serial port: {str(e)}"
             )
 
-    # def plot_data(self, new_data_points):
-    #     for data, data_point, plot_widget in zip(
-    #         self.data, new_data_points, self.plot_widgets
-    #     ):
-    #         print(data_point)
-    #         data.append(data_point)
-    #         if len(data) > 200:
-    #             data = data[-200:]
-    #         plot_widget.plot(data, clear=True, pen=pg.mkPen("b"))  # Blue pen
-    #         if len(data) > 1:
-    #             plot_widget.enableAutoRange("x")
+    def plot_data(self, new_data_points):
+        for data, data_point, plot_widget in zip(
+            self.data, new_data_points, self.plot_widgets
+        ):
+            # print(data)
+            data.append(data_point)
+            if len(data) > 4e4:
+                data.pop(0)
+            plot_widget.plot(data, clear=True)
 
     # def log_data(self, new_data_points):
     #     with open(
@@ -329,9 +326,9 @@ class CryoWidget(QWidget):
         print("closing")
         self.update_timer.stop()
 
-        self.plot_thread.exit()
-        self.plot_thread.wait()
-        print("plot thread closed")
+        # self.plot_thread.exit()
+        # self.plot_thread.wait()
+        # print("plot thread closed")
 
         self.log_thread.exit()
         self.log_thread.wait()
