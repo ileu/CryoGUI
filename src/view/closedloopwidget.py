@@ -13,7 +13,7 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtCore import Qt
 
-from src.dummies.dummies import DummyOpenLoopAxis
+from src.dummies.dummies import DummyOpenLoopAxis, DummyClosedLoopAxis
 
 
 class ClosedLoopWidget(QWidget):
@@ -333,7 +333,7 @@ class ClosedLoopWidget(QWidget):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    window = ClosedLoopWidget(positionqty=DummyOpenLoopAxis("0"))
+    window = ClosedLoopWidget(positionqty=DummyClosedLoopAxis("0"))
     window.activate()
     window.show()
     sys.exit(app.exec())

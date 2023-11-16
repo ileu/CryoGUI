@@ -66,6 +66,8 @@ class OpenLoopWidget(QFrame):
 
         if controller.axis is None:
             self.deactivate()
+        else:
+            self.axis = axis
 
         self.controller = controller
 

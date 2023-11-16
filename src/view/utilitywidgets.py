@@ -139,8 +139,14 @@ class SetWidget(QWidget):
     valueChanged = pyqtSignal(float)
 
     def __init__(
-        self, title="", symbols: int = 7, unit: str = "", bottom=0, top=60, **kwargs
-    ):
+        self,
+        title: object = "",
+        symbols: int = 7,
+        unit: str = "",
+        bottom: object = 0,
+        top: object = 60,
+        **kwargs: object,
+    ) -> object:
         super().__init__()
         self.symbols = symbols
         self.unit = unit

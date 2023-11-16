@@ -11,8 +11,9 @@ class AMC300Controller(QObject):
     deviceDisconnected = pyqtSignal()
     statusUpdated = pyqtSignal(str)
 
-    def __init__(self, ip):
-        super().__init__()
+    def __init__(self, ip, parent=None):
+        super().__init__(parent)
+        self.parent = parent
         self.ip = ip
         self.device = Device(ip)
         self.axes: List[Axis] = []
@@ -34,7 +35,7 @@ class AMC300Controller(QObject):
         self.deviceConnected.emit()
 
         for i in range(3):
-            self.axes.append(Axis(i, self.device))
+            self.axes.append(Axis(i, self.device, self.parent))
         self.statusUpdated.emit("Connected")
         return True
 
@@ -58,13 +59,19 @@ class AMC300Controller(QObject):
         return True
 
 
-class Axis(PositionQty):
-    def __init__(self, index, device: Device):
+class Axis(QObject, PositionQty):
+    positionUpdated = pyqtSignal(float)
+    modeUpdated = pyqtSignal(str)
+    valuesUpdated = pyqtSignal(list)
+    statusUpdated = pyqtSignal(str)
+
+    def __init__(self, index, device: Device, parent=None):
         """
 
         :param index:
         :param device:
         """
+        super().__init__(parent)
         self.index = index
         self.device = device
         self._position = 0
@@ -90,8 +97,6 @@ class Axis(PositionQty):
         if pos_m < 2e-3 or pos_m > 10e-3:
             raise OverflowError("Position is out of axis limit")
         self.device.move.setControlTargetPosition(self.index, pos_m * 1e9)
-        # allow for moving axis
-        self.set_axis_control_move(True)
 
     def update_position(self):
         """
@@ -99,6 +104,32 @@ class Axis(PositionQty):
         :return:
         """
         self._position = self.device.move.getPosition(self.index) * 1e-9
+        self.positionUpdated.emit(self._position)
+
+    def update_values(self):
+        """
+        Updates the values of the axis
+        :return:
+        """
+        frequency = self.device.control.getControlFrequency(self.index) * 1e-3
+        voltage = self.device.control.getControlVoltage(self.index) * 1e-3
+        offset = self.device.control.getControlOffsetVoltage(self.index) * 1e-3
+        self.valuesUpdated.emit([voltage, frequency, offset])
+
+    def set_value(self, value: float, name: str):
+        """
+        Sets the value of the axis
+        :param value: value to set
+        :param name: name of the value to set
+        :return:
+        """
+        if name == "voltage":
+            self.device.control.setControlVoltage(self.index, value * 1e3)
+        elif name == "frequency":
+            self.device.control.setControlFrequency(self.index, value * 1e3)
+        elif name == "offset_voltage":
+            self.device.control.setControlOffsetVoltage(self.index, value * 1e3)
+        self.update_values()
 
     def set_axis_control_move(self, b: bool):
         self.device.control.setControlMove(self.index, b)
@@ -106,16 +137,9 @@ class Axis(PositionQty):
     def get_axis_movement(self) -> bool:
         return self.device.control.getControlMove(self.index)
 
-    def activate_axis(self):
-        # turn on axis
-        self.device.control.setControlOutput(self.index, True)
-
-    def deactivate_axis(self):
-        # deactivate axis and ground axis
-        self.device.control.setControlOutput(self.index, False)
-
     def set_status_axis(self, status: bool):
         self.device.control.setControlOutput(self.index, status)
+        self.modeUpdated(status)
 
     def get_status_axis(self) -> bool:
         return self.device.control.getControlOutput(self.index)
