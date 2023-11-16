@@ -1,6 +1,6 @@
 import sys
 
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QThread, QTimer
 from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QVBoxLayout, QHBoxLayout
 
 from src.controller import AMC300Controller
@@ -41,7 +41,9 @@ class ClosedLoopWidgetv2(QWidget):
 
         self.init_ui()
 
+        self.controller_thread = QThread()
         self.controller = controller
+        self.controller.moveToThread(self.controller_thread)
 
         self.controller.axes[axis_index].statusUpdated.connect(
             self.control_bar.status_label.setText
@@ -56,6 +58,16 @@ class ClosedLoopWidgetv2(QWidget):
         self.control_bar.mode_button.clicked.connect(
             self.controller.axes[axis_index].set_status_axis
         )
+
+        self.controller.axes[axis_index].update_values()
+        self.controller.axes[axis_index].update_position()
+        print("Connecting axis")
+        self.update_timer = QTimer()
+        self.update_timer.setInterval(1000)
+        self.update_timer.timeout.connect(self.controller.axes[axis_index].update_position)
+        self.update_timer.start()
+        print("Connected axis")
+        self.controller_thread.start()
 
     def init_ui(self):
         self.position_display.setAlignment(
@@ -90,7 +102,8 @@ class ClosedLoopWidgetv2(QWidget):
         self.setLayout(layout)
 
     def set_position(self, value):
-        self.position_display.setText(str(value) + self.unit)
+        print("Setting position")
+        self.position_display.setText(f"{value:.{2}f}" + self.unit)
 
     def set_values(self, values):
         self.voltage_widget.set_input_text(values[0])
@@ -126,6 +139,6 @@ if __name__ == "__main__":
     controller.connect()
 
     app = QApplication(sys.argv)
-    window = ClosedLoopWidgetv2(controller=controller, axis_index=axis)
+    window = ClosedLoopWidgetv2(controller=controller, axis_index=axis, unit="um")
     window.show()
     sys.exit(app.exec())

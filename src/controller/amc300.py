@@ -59,7 +59,7 @@ class AMC300Controller(QObject):
         return True
 
 
-class Axis(QObject, PositionQty):
+class Axis(QObject):
     positionUpdated = pyqtSignal(float)
     modeUpdated = pyqtSignal(str)
     valuesUpdated = pyqtSignal(list)
@@ -103,8 +103,9 @@ class Axis(QObject, PositionQty):
         Updates the position of the axis
         :return:
         """
+        print("updating position")
         self._position = self.device.move.getPosition(self.index) * 1e-9
-        self.positionUpdated.emit(self._position)
+        self.positionUpdated.emit(self._position*1e6)
 
     def update_values(self):
         """
@@ -112,8 +113,8 @@ class Axis(QObject, PositionQty):
         :return:
         """
         frequency = self.device.control.getControlFrequency(self.index) * 1e-3
-        voltage = self.device.control.getControlVoltage(self.index) * 1e-3
-        offset = self.device.control.getControlOffsetVoltage(self.index) * 1e-3
+        voltage = self.device.control.getControlAmplitude(self.index) * 1e-3
+        offset = self.device.control.getControlFixOutputVoltage(self.index) * 1e-3
         self.valuesUpdated.emit([voltage, frequency, offset])
 
     def set_value(self, value: float, name: str):
@@ -139,7 +140,7 @@ class Axis(QObject, PositionQty):
 
     def set_status_axis(self, status: bool):
         self.device.control.setControlOutput(self.index, status)
-        self.modeUpdated(status)
+        # self.modeUpdated.emit(status)
 
     def get_status_axis(self) -> bool:
         return self.device.control.getControlOutput(self.index)

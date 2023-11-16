@@ -46,5 +46,5 @@ else:
 # Deativate axis
 amc.control.setControlOutput(axis, False)
 
-# Close connection
-amc.close()
+# # Close connection
+# amc.close()
