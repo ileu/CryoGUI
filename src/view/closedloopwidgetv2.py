@@ -16,7 +16,7 @@ class ClosedLoopWidgetv2(QWidget):
         title: str = "Quantity",
         symbols: int = 7,
         unit: str = "",
-        **kwargs
+        **kwargs,
     ):
         super().__init__(parent=parent, **kwargs)
 
@@ -51,6 +51,9 @@ class ClosedLoopWidgetv2(QWidget):
 
         self.controller.axes[axis_index].positionUpdated.connect(self.set_position)
         self.controller.axes[axis_index].valuesUpdated.connect(self.set_values)
+        self.controller.axes[axis_index].targetPositionUpdated.connect(
+            self.set_target_position
+        )
 
         self.control_bar.active_button.clicked.connect(
             self.controller.axes[axis_index].set_axis_control_move
@@ -61,10 +64,26 @@ class ClosedLoopWidgetv2(QWidget):
 
         self.controller.axes[axis_index].update_values()
         self.controller.axes[axis_index].update_position()
+        self.controller.axes[axis_index].get_target_position()
+
+        self.voltage_widget.valueChanged.connect(
+            lambda value: self.controller.axes[axis_index].set_value(value, "voltage")
+        )
+        self.frequency_widget.valueChanged.connect(
+            lambda value: self.controller.axes[axis_index].set_value(value, "frequency")
+        )
+        self.offset_widget.valueChanged.connect(
+            lambda value: self.controller.axes[axis_index].set_value(value, "offset")
+        )
+        self.position_widget.valueChanged.connect(
+            self.controller.axes[axis_index].set_target_position
+        )
         print("Connecting axis")
         self.update_timer = QTimer()
         self.update_timer.setInterval(1000)
-        self.update_timer.timeout.connect(self.controller.axes[axis_index].update_position)
+        self.update_timer.timeout.connect(
+            self.controller.axes[axis_index].update_position
+        )
         self.update_timer.start()
         print("Connected axis")
         self.controller_thread.start()
@@ -109,6 +128,9 @@ class ClosedLoopWidgetv2(QWidget):
         self.voltage_widget.set_input_text(values[0])
         self.frequency_widget.set_input_text(values[1])
         self.offset_widget.set_input_text(values[2])
+
+    def set_target_position(self, value):
+        self.position_widget.set_input_text(f"{value:.{2}f}")
 
     def connect_axis(self, axis):
         self.controller.axis = axis
