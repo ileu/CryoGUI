@@ -1,6 +1,7 @@
 import datetime
 import os
 import sys
+import time
 from typing import List
 
 from PyQt5.QtCore import QThread, QTimer, pyqtSignal
@@ -325,6 +326,7 @@ class CryoWidget(QWidget):
         super().closeEvent(*args, **kwargs)
         print("closing")
         self.update_timer.stop()
+        time.sleep(1)
 
         # self.plot_thread.exit()
         # self.plot_thread.wait()

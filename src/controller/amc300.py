@@ -62,7 +62,8 @@ class AMC300Controller(QObject):
 class Axis(QObject):
     positionUpdated = pyqtSignal(float)
     targetPositionUpdated = pyqtSignal(float)
-    modeUpdated = pyqtSignal(str)
+    modeUpdated = pyqtSignal(bool)
+    activivityUpdated = pyqtSignal(bool)
     valuesUpdated = pyqtSignal(list)
     statusUpdated = pyqtSignal(str)
 
@@ -104,7 +105,6 @@ class Axis(QObject):
         Updates the position of the axis
         :return:
         """
-        print("updating position")
         self._position = self.device.move.getPosition(self.index) * 1e-9
         self.positionUpdated.emit(self._position * 1e6)
 
@@ -125,31 +125,37 @@ class Axis(QObject):
         :param name: name of the value to set
         :return:
         """
+        print("Setting value", value, name)
         if name == "voltage":
-            self.device.control.setControlVoltage(self.index, value * 1e3)
+            self.device.control.setControlAmplitude(self.index, value * 1e3)
         elif name == "frequency":
             self.device.control.setControlFrequency(self.index, value * 1e3)
         elif name == "offset":
-            self.device.control.setControlOffsetVoltage(self.index, value * 1e3)
-        self.update_values()
+            self.device.control.setControlFixOutputVoltage(self.index, value * 1e3)
+        # self.update_values()
 
     def set_axis_control_move(self, b: bool):
         self.device.control.setControlMove(self.index, b)
 
     def get_axis_movement(self) -> bool:
-        return self.device.control.getControlMove(self.index)
+        acitivity = self.device.control.getControlMove(self.index)
+        self.activivityUpdated.emit(acitivity)
+        return acitivity
 
     def set_status_axis(self, status: bool):
         self.device.control.setControlOutput(self.index, status)
         # self.modeUpdated.emit(status)
 
     def get_status_axis(self) -> bool:
-        return self.device.control.getControlOutput(self.index)
+        mode = self.device.control.getControlOutput(self.index)
+        self.modeUpdated.emit(mode)
+        return mode
 
     def set_target_position(self, pos_um: float):
-        self.device.move.setControlTargetPosition(self.index, pos_um * 1e-3)
+        print("Setting target position", pos_um)
+        self.device.move.setControlTargetPosition(self.index, pos_um * 1e3)
 
     def get_target_position(self):
         target_position = self.device.move.getControlTargetPosition(self.index)
-        self.targetPositionUpdated.emit(target_position * 1e6)
+        self.targetPositionUpdated.emit(target_position*1e-3)
         return target_position

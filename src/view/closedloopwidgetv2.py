@@ -36,7 +36,7 @@ class ClosedLoopWidgetv2(QWidget):
         )
         self.offset_widget = SetWidget(title="Offset", symbols=8, unit="V", top=90)
 
-        self.position_widget = SetWidget(title="Position", symbols=8, unit="um", top=90)
+        self.position_widget = SetWidget(title="Position", symbols=8, unit="um", top=15e3)
         self.step_widget = IncrementWidget(title="Step")
 
         self.init_ui()
@@ -58,13 +58,21 @@ class ClosedLoopWidgetv2(QWidget):
         self.control_bar.active_button.clicked.connect(
             self.controller.axes[axis_index].set_axis_control_move
         )
+        self.controller.axes[axis_index].activivityUpdated.connect(
+            self.control_bar.active_button.setChecked
+        )
         self.control_bar.mode_button.clicked.connect(
             self.controller.axes[axis_index].set_status_axis
+        )
+        self.controller.axes[axis_index].modeUpdated.connect(
+            self.control_bar.mode_button.setChecked
         )
 
         self.controller.axes[axis_index].update_values()
         self.controller.axes[axis_index].update_position()
         self.controller.axes[axis_index].get_target_position()
+        self.controller.axes[axis_index].get_status_axis()
+        self.controller.axes[axis_index].get_axis_movement()
 
         self.voltage_widget.valueChanged.connect(
             lambda value: self.controller.axes[axis_index].set_value(value, "voltage")
@@ -78,6 +86,8 @@ class ClosedLoopWidgetv2(QWidget):
         self.position_widget.valueChanged.connect(
             self.controller.axes[axis_index].set_target_position
         )
+        self.position_widget.valueChanged.connect(
+            lambda value: print(f"{value}"))
         print("Connecting axis")
         self.update_timer = QTimer()
         self.update_timer.setInterval(1000)
@@ -121,7 +131,6 @@ class ClosedLoopWidgetv2(QWidget):
         self.setLayout(layout)
 
     def set_position(self, value):
-        print("Setting position")
         self.position_display.setText(f"{value:.{2}f}" + self.unit)
 
     def set_values(self, values):
@@ -156,11 +165,16 @@ class ClosedLoopWidgetv2(QWidget):
 
 if __name__ == "__main__":
     IP = "192.168.1.1"
-    axis = 0
+    # axis = 0
     controller = AMC300Controller(IP)
     controller.connect()
 
     app = QApplication(sys.argv)
-    window = ClosedLoopWidgetv2(controller=controller, axis_index=axis, unit="um")
+    window = QWidget()
+    layout = QVBoxLayout()
+    window.setLayout(layout)
+    for axis in range (3):
+        clw2 = ClosedLoopWidgetv2(controller=controller, axis_index=axis, unit="um")
+        layout.addWidget(clw2)
     window.show()
     sys.exit(app.exec())
