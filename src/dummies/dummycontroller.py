@@ -3,6 +3,7 @@ import random
 from typing import List
 
 import numpy as np
+from PyQt5.QtCore import QObject
 
 from src.controller._quantities import PowerQty
 from src.dummies.dummies import DummyOpenLoopAxis
@@ -48,9 +49,10 @@ class DummyANC300Controller(DummyController):
         return True
 
 
-class DummyAMC300Controller(DummyController):
+class DummyAMC300Controller(DummyController, QObject):
     def __init__(self, ip):
         super().__init__()
+        QObject.__init__(self)
         self.ip = ip
 
         self.axes: List[DummyOpenLoopAxis] = []

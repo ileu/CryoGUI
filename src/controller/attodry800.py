@@ -1,6 +1,6 @@
 import time
 
-from PyQt5.QtCore import QObject, pyqtSignal, QTimer, QThread
+from PyQt5.QtCore import QObject, pyqtSignal
 
 from src.AttoDRY import Cryostats
 

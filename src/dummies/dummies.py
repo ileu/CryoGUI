@@ -108,6 +108,20 @@ class DummyOpenLoopAxis:
         logger.info(f"{self._title} get {item}")
         return super().__getattribute__(item)
 
+    # def __getattr__(self, item):
+    #     if item.startswith("get"):
+    #         def get_method(kwargs):
+    #             return getattr(self.attodry, item)(**kwargs)
+    #
+    #         return get_method
+    #     elif item.startswith("set"):
+    #         def set_method(kwargs):
+    #             return getattr(self.attodry, item)(**kwargs)
+    #
+    #         return set_method
+    #     else:
+    #         return getattr(self.attodry, item)
+
     def __setattr__(self, key, value):
         if key.startswith("_"):
             super().__setattr__(key, value)

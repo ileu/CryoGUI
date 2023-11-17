@@ -146,7 +146,7 @@ class SetWidget(QWidget):
         bottom: object = 0,
         top: object = 60,
         **kwargs: object,
-    ) -> object:
+    ):
         super().__init__()
         self.symbols = symbols
         self.unit = unit

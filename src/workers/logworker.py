@@ -47,6 +47,7 @@ from PyQt5.QtCore import QObject, pyqtSignal
 
 class LogWorker(QObject):
     loggingFailed = pyqtSignal(str)
+    addedRemark = pyqtSignal(str)
 
     def __init__(self, filename, parent, data_names):
         super().__init__()
@@ -54,12 +55,13 @@ class LogWorker(QObject):
         self.filename = filename
         self.data_names = data_names
         self.remark = ""
+        self.addedRemark.connect(self.add_remark)
 
     def set_filename(self, filename):
         self.filename = filename
 
-    def set_remark(self, remark):
-        self.remark = remark
+    def add_remark(self, remark):
+        self.remark += remark
 
     def update(self, new_data_points):
         print_header = not os.path.exists(self.filename)
@@ -77,5 +79,6 @@ class LogWorker(QObject):
             line = f"{time.time()},"
             line += ",".join(map(str, new_data_points))
             line += f",{self.remark}"
+            self.remark = ""
             f.write(line + "\n")
             f.flush()

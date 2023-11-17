@@ -19,8 +19,9 @@ from PyQt5.QtWidgets import (
     QLineEdit,
     QHBoxLayout,
     QVBoxLayout,
+    QDoubleSpinBox,
 )
-from pyqtgraph import PlotWidget
+from pyqtgraph import PlotWidget, mkPen
 
 from src.controller.attodry800 import AttoDry800Controller
 from src.workers import LogWorker
@@ -51,21 +52,21 @@ class CryoWidget(QWidget):
         self.d_value = 0
 
         self.plot_widgets: List[PlotWidget] = [
-            self.stage_temp_canvas.getPlotItem(),
-            self.stage_pressure_canvas.getPlotItem(),
-            self.cold_temp_canvas.getPlotItem(),
-            self.heater_power_canvas.getPlotItem(),
-            self.turbo_pump_canvas.getPlotItem(),
+            self.stage_temp_canvas,
+            self.stage_pressure_canvas,
+            self.cold_temp_canvas,
+            self.heater_power_canvas,
+            self.turbo_pump_canvas,
         ]
 
-        data_names = [
+        self.data_names = [
             "Temperature",
             "Pressure",
             "Temperature",
             "Power",
             "Frequency",
         ]
-        data_units = ["K", "mbar", "K", "W", "Hz"]
+        self.data_units = ["K", "mbar", "K", "W", "Hz"]
         data_titles = [
             "sample-temp_K",
             "sample-pres_mbar",
@@ -184,45 +185,102 @@ class CryoWidget(QWidget):
 
         controller_layout = QGridLayout()
         self.base_temperature_button = QPushButton("Base Temperature")
+        self.base_temperature_button.clicked.connect(
+            self.controller.attodry.goToBaseTemperature
+        )
+        self.base_temperature_button.clicked.connect(
+            lambda: self.log_worker.add_remark("Going to base temperature")
+        )
 
         controller_layout.addWidget(self.base_temperature_button, 0, 0)
 
         self.heat_up_button = QPushButton("Heat Up")
         self.heat_up_button.clicked.connect(self.controller.attodry.startSampleExchange)
+        self.heat_up_button.clicked.connect(
+            lambda: self.log_worker.add_remark("Heating up")
+        )
         controller_layout.addWidget(self.heat_up_button, 1, 0)
 
         self.temperature_control_button = QPushButton("Activate Temperature control")
+        # self.temperature_control_button.clicked.connect(
+        #     self.controller.attodry.toggleTemperatureControl
+        # )
+        self.temperature_control_button.clicked.connect(
+            lambda: self.log_worker.add_remark("Toggling temperature control")
+        )
         controller_layout.addWidget(self.temperature_control_button, 2, 0)
 
-        self.user_temperature_edit = QLineEdit()
-        self.user_temperature_edit.setText(str(self.user_temperature))
+        self.user_temperature_edit = QDoubleSpinBox()
+        self.user_temperature_edit.setRange(4, 300)
+        self.user_temperature_edit.setDecimals(2)
+        self.user_temperature_edit.setSuffix(" K")
+        self.user_temperature_edit.setButtonSymbols(QDoubleSpinBox.NoButtons)
+        self.user_temperature_edit.setValue(self.user_temperature)
+        self.user_temperature_edit.editingFinished.connect(
+            lambda: self.log_worker.addedRemark.emit(
+                f"Set User Temperature to: {self.user_temperature_edit.text()} K"
+            )
+        )
+        self.user_temperature_edit.setEnabled(False)
         controller_layout.addWidget(self.user_temperature_edit, 2, 1)
 
         self.set_pid_button = QPushButton("Set PID")
         controller_layout.addWidget(self.set_pid_button, 2, 2)
 
-        self.p_edit = QLineEdit()
+        self.p_edit = QDoubleSpinBox()
         controller_layout.addWidget(self.p_edit, 2, 3)
 
-        self.i_edit = QLineEdit()
+        self.i_edit = QDoubleSpinBox()
         controller_layout.addWidget(self.i_edit, 2, 4)
 
-        self.d_edit = QLineEdit()
-        # controller_layout.addWidget(self.d_edit, 2, 5)
+        self.d_edit = QDoubleSpinBox()
+        controller_layout.addWidget(self.d_edit, 2, 5)
 
         self.break_valve_button = QPushButton("Break Sample Valve")
-        self.break_valve_button.clicked.connect(
-            self.controller.attodry.toggleBreakVac800Valve
-        )
-        # controller_layout.addWidget(self.break_valve_button, 0, 6)
+        # self.break_valve_button.clicked.connect(
+        #     self.controller.attodry.toggleBreakVac800Valve
+        # )
+        controller_layout.addWidget(self.break_valve_button, 0, 5)
 
         self.confirm_button = QPushButton("Confirm")
         self.confirm_button.clicked.connect(self.controller.attodry.Confirm)
+        self.confirm_button.clicked.connect(
+            lambda: self.log_worker.add_remark("Confirmed")
+        )
         controller_layout.addWidget(self.confirm_button, 0, 3)
 
         self.cancel_button = QPushButton("Cancel")
         self.cancel_button.clicked.connect(self.controller.attodry.Cancel)
+        self.cancel_button.clicked.connect(
+            lambda: self.log_worker.add_remark("Cancelled")
+        )
         controller_layout.addWidget(self.cancel_button, 0, 4)
+
+        for i, plot_widget in enumerate(self.plot_widgets):
+            plot_widget.showGrid(x=True, y=True, alpha=0.1)
+            # plot_widget.getAxis("bottom").setLabel("Time", units="s")
+            plot_widget.getAxis("left").setLabel(
+                self.data_names[i] + f" / {self.data_units[i]}"
+            )
+            plot_widget.getAxis("bottom").setPen(mkPen(color="k"))
+            plot_widget.getAxis("left").setPen(mkPen(color="k"))
+            plot_widget.showAxis("right")
+            plot_widget.getAxis("right").setStyle(showValues=False)
+            plot_widget.getAxis("right").setPen(mkPen(color="k"))
+            plot_widget.showAxis("top")
+            plot_widget.getAxis("top").setStyle(showValues=False)
+            plot_widget.getAxis("top").setPen(mkPen(color="k"))
+            plot_widget.setBackground("w")  # White background
+            plot_widget.getPlotItem().setContentsMargins(0, 0, 25, 10)
+            plot_widget.enableAutoRange(x=True, y=True)
+            # plot_widget.setStyleSheet(
+            #     "border: 0px solid gray; border-radius: 5px; padding: 2px; background-color: white"
+            # )
+            plot_widget.setStyleSheet(
+                "QFrame {background-color: white; border: 2px solid black;}"
+            )
+            # if i != 0:
+            #     plot_widget.setXLink(self.plot_widgets[0])
 
         plot_layout = QGridLayout()
 
@@ -307,10 +365,11 @@ class CryoWidget(QWidget):
             self.data, new_data_points, self.plot_widgets
         ):
             # print(data)
+            item = plot_widget.getPlotItem()
             data.append(data_point)
             if len(data) > 4e4:
                 data.pop(0)
-            plot_widget.plot(data, clear=True)
+            item.plot(data, clear=True)
 
     # def log_data(self, new_data_points):
     #     with open(

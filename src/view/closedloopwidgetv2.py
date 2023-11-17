@@ -4,6 +4,7 @@ from PyQt5.QtCore import Qt, QThread, QTimer
 from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QVBoxLayout, QHBoxLayout
 
 from src.controller import AMC300Controller
+from src.dummies.dummycontroller import DummyAMC300Controller
 from src.view.utilitywidgets import SetWidget, ControlBar, IncrementWidget
 
 
@@ -86,8 +87,7 @@ class ClosedLoopWidgetv2(QWidget):
         self.position_widget.valueChanged.connect(
             self.controller.axes[axis_index].set_target_position
         )
-        self.position_widget.valueChanged.connect(
-            lambda value: print(f"{value}"))
+
         print("Connecting axis")
         self.update_timer = QTimer()
         self.update_timer.setInterval(1000)
@@ -165,8 +165,8 @@ class ClosedLoopWidgetv2(QWidget):
 
 if __name__ == "__main__":
     IP = "192.168.1.1"
-    # axis = 0
-    controller = AMC300Controller(IP)
+    axis = 0
+    controller = DummyAMC300Controller(IP)
     controller.connect()
 
     app = QApplication(sys.argv)
