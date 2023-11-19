@@ -2,14 +2,14 @@ import sys
 import numpy as np
 import serial
 import threading
-from PyQt6.QtGui import QAction
 from serial.tools.list_ports import comports
-from PyQt6.QtWidgets import QApplication, QMainWindow, QPushButton, QVBoxLayout, QWidget, QLineEdit, \
-    QInputDialog, QMessageBox, QFileDialog, QHBoxLayout, QStatusBar, QPlainTextEdit
+from PyQt5.QtWidgets import QApplication, QMainWindow, QPushButton, QVBoxLayout, \
+    QWidget, QLineEdit, QInputDialog, QMessageBox, QFileDialog, QHBoxLayout, QStatusBar, \
+    QPlainTextEdit, QAction
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 
-from src.view import ClosedLoopWidget
+from src.widgets import ClosedLoopWidget
 
 
 class GUI(QMainWindow):

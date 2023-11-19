@@ -6,16 +6,15 @@ from PyQt5.QtWidgets import (
     QWidget,
     QLabel,
     QVBoxLayout,
-    QHBoxLayout,
     QGridLayout,
 )
 
 from src.controller import AMC300Controller
 from src.dummies.dummycontroller import DummyAMC300Controller
-from src.view.utilitywidgets import SetWidget, ControlBar, IncrementWidget
+from src.widgets.utilitywidgets import SetWidget, ControlBar, IncrementWidget
 
 
-class ClosedLoopWidgetv2(QWidget):
+class ClosedLoopWidget(QWidget):
     def __init__(
         self,
         parent: QWidget = None,
@@ -181,7 +180,7 @@ if __name__ == "__main__":
     layout = QVBoxLayout()
     window.setLayout(layout)
     for axis in range(3):
-        clw2 = ClosedLoopWidgetv2(controller=controller, axis_index=axis, unit="um")
+        clw2 = ClosedLoopWidget(controller=controller, axis_index=axis, unit="um")
         layout.addWidget(clw2)
     window.show()
     sys.exit(app.exec())

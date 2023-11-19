@@ -1,6 +1,6 @@
 import sys
 
-from PyQt5.QtCore import pyqtSignal, QThread, QTimer
+from PyQt5.QtCore import pyqtSignal, QThread
 from PyQt5.QtWidgets import (
     QApplication,
     QMainWindow,
@@ -18,8 +18,8 @@ from pymeasure.instruments.attocube import ANC300Controller
 
 from src.controller.openloopcontroller import OpenLoopController
 from src.dummies.dummycontroller import DummyANC300Controller
-from src.view.instrumentwidget import InstrumentWidget
-from src.view import OpenLoopWidget
+from src.widgets.instrumentwidget import InstrumentWidget
+from src.widgets import OpenLoopWidget
 
 import logging
 

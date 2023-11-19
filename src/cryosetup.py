@@ -28,7 +28,7 @@ class CryoSetup(WindowSidebarTabs):
         self.show()
 
         ui_path = os.path.dirname(os.path.abspath(__file__))
-        list_path = os.path.join(ui_path, "view/INSTRUMENT_LIST.txt")
+        list_path = os.path.join(ui_path, "widgets/INSTRUMENT_LIST.txt")
 
         self.inst_connection = InstrumentConnectionWidget(list_path, parent=self)
         self.inst_connection.instrument_classes = {

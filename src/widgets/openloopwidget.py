@@ -1,7 +1,7 @@
 import logging
 import os
 
-from PyQt5.QtCore import Qt, QThread, pyqtSlot
+from PyQt5.QtCore import Qt, pyqtSlot
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import (
@@ -11,13 +11,12 @@ from PyQt5.QtWidgets import (
     QVBoxLayout,
     QHBoxLayout,
     QGridLayout,
-    QFrame,
 )
 from pymeasure.instruments.attocube.anc300 import Axis
 
 from src.controller.openloopcontroller import OpenLoopController
 from src.dummies.dummies import DummyOpenLoopAxis
-from src.view.utilitywidgets import (
+from src.widgets.utilitywidgets import (
     SetWidget,
     IncrementWidget,
     push_button_style,

@@ -9,9 +9,8 @@ from PyQt5.QtWidgets import (
     QVBoxLayout,
     QWidget,
     QInputDialog,
-    QAction,
 )
-from src.view import ClosedLoopWidget
+from src.widgets import ClosedLoopWidget
 
 from controller import AMC300Controller
 

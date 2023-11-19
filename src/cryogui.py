@@ -101,7 +101,7 @@ class CryoWidget(QWidget):
         self.port_combo.currentTextChanged.connect(self.controller.set_port)
 
         self.update_timer = QTimer()
-        self.update_timer.setInterval(1000)
+        self.update_timer.setInterval(50)
         self.update_timer.timeout.connect(self.controller.update_values)
 
         self.connect_button.clicked.connect(self.controller.connect_attodry)

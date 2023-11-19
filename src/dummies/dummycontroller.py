@@ -125,6 +125,9 @@ class DummyAttoDRY(DummyController):
     def isDeviceConnected(self):
         return True
 
+    def toggleBreakVac800Valve(self):
+        return True
+
 
 class DummyPM100D(PowerQty):
     def __init__(self, address, signal_width=30, signal_max_power=10):
