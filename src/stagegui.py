@@ -27,15 +27,18 @@ class StageGui(QWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        # self.amc_widget = AMCGUI()
+        self.amc_widget = AMCGUI()
+
         self.anc_widget = ANCGUI()
+        self.anc = None
+
         self.power_frame = QFrame()
         self.power_plot = PlotWidget(title="SHOW ME THE POWER")
 
         self.power_meter = None
         self.last_power = 0
         self.PM_ALLOWED = ["PM100D", "N7744C"]
-        self.power_array = np.array([])
+        self.power_array = np.array([[]])
 
         self.power_meter_box = QComboBox()
         self.power_meter_box.addItem("Choose Instrument")
@@ -69,7 +72,13 @@ class StageGui(QWidget):
 
         self.threadPool = QThreadPool.globalInstance()
         self.plot_thread = QThread()
-        self.plot_worker = PlotWorker([self.power_plot], self, ["Power"], ["W"])
+        self.plot_worker = PlotWorker(
+            [self.power_plot],
+            self,
+            ["Power"],
+            ["W"],
+            max_length=250,
+        )
         self.plot_worker.moveToThread(self.plot_thread)
         self.updatePlot.connect(self.plot_worker.update)
 
@@ -91,19 +100,27 @@ class StageGui(QWidget):
             else:
                 wait = self.power_meter.waiting
             if not wait:
-                self.updatePower()
-                self.updatePlot.emit([self.power_array])
+                # self.updatePower()
+                self.updatePlot.emit([self.last_power])
             else:
                 loop = QEventLoop()
                 QTimer.singleShot(2000, loop.quit)
                 loop.exec()
 
-    def updatePower(self):
-        pow_curr = self.last_power
-        self.power_array = np.append(self.power_array[-100:], pow_curr)
-        # datapoints = len(self.power_array)
-        # if datapoints > self.datapoints:
-        #     self.power_array = self.power_array[-int(self.datapoints):]
+    # def updatePower(self):
+    #     pow_curr = self.last_power
+    #     self.power_array = np.append(self.power_array[-100:], pow_curr)
+    # datapoints = len(self.power_array)
+    # if datapoints > self.datapoints:
+    #     self.power_array = self.power_array[-int(self.datapoints):]$
+
+    # def connect_amc(self, amc):
+    #     self.amc = amc
+    #     self.amc_widget.connect_amc(amc)
+
+    def connect_anc(self, anc):
+        self.anc = anc
+        self.anc_widget.connect_anc(anc)
 
     def connect_pm(self, pm, channel=0):
         if hasattr(pm, "is_multichannel") and pm.is_multichannel:
@@ -146,8 +163,6 @@ class StageGui(QWidget):
         # self.plotThread.start()
 
     def disconnect_pm(self):
-        self.plot_thread.exit()
-        self.plot_thread.wait()
         self.pm_reader.kill()
         self.power_meter = None
 
@@ -222,9 +237,22 @@ class StageGui(QWidget):
         stage_layout = QGridLayout()
         stage_layout.addWidget(self.anc_widget, 0, 0, 2, 1)
         stage_layout.addWidget(self.power_frame, 0, 1, 1, 1)
-        # stage_layout.addWidget(self.amc_widget, 1, 1, 1, 1)
+        stage_layout.addWidget(self.amc_widget, 1, 1, 1, 1)
+
+        stage_layout.setColumnStretch(0, 0)
+        stage_layout.setColumnStretch(1, 1)
+        stage_layout.setRowStretch(0, 1)
+        stage_layout.setRowStretch(1, 0)
 
         self.setLayout(stage_layout)
+
+    def closeEvent(self, event):
+        if self.power_meter:
+            self.disconnect_pm()
+        self.pm_reader.true_kill()
+        self.plot_thread.exit()
+        self.plot_thread.wait()
+        super().closeEvent(event)
 
 
 if __name__ == "__main__":

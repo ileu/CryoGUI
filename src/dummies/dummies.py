@@ -1,13 +1,18 @@
+import logging
 import random
 from datetime import datetime
 
-import logging
+from PyQt5.QtCore import QObject, pyqtSignal
 
 logger = logging.getLogger(__name__)
 
 
-class DummyClosedLoopAxis:
+class DummyClosedLoopAxis(QObject):
+    statusUpdated = pyqtSignal(str)
+    positionUpdated = pyqtSignal(float)
+
     def __init__(self, index):
+        super().__init__()
         self._position = 0
         self._target_position = 0
         self.start_time = datetime.now()
@@ -42,11 +47,14 @@ class DummyClosedLoopAxis:
     def _move(self):
         elapsed_time = (datetime.now() - self.start_time).total_seconds()
         if elapsed_time > 3:
+            self.statusUpdated.emit("Arrived")
             self._position = self._target_position
         else:
+            self.statusUpdated.emit("Moving")
             self._position += (
                 elapsed_time / 3 * (self._target_position - self._position)
             )
+        self.positionUpdated.emit(self._position)
 
     def set_axis_control_move(self, b):
         print(f"{self.index} set axis control move", b)
@@ -59,18 +67,22 @@ class DummyClosedLoopAxis:
         return self.movable
 
     def activate_axis(self):
+        self.statusUpdated.emit("Activating")
         print(f"{self.index} activate axis")
         self.grounded = True
 
     def deactivate_axis(self):
+        self.statusUpdated.emit("Deactivating")
         print(f"{self.index} deactivate axis")
         self.grounded = False
 
     def set_status_axis(self, status):
+        self.statusUpdated.emit("Setting status")
         print(f"{self.index} set status axis", status)
         self.grounded = status
 
     def get_status_axis(self):
+        self.statusUpdated.emit(str(self.grounded))
         return self.grounded
 
 

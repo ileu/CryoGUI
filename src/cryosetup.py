@@ -144,6 +144,11 @@ class CryoSetup(WindowSidebarTabs):
 
     def closeEvent(self, *args, **kwargs):
         super(QtWidgets.QMainWindow, self).closeEvent(*args, **kwargs)
+
+        self.cryo_widget.closeEvent(*args, **kwargs)
+        self.stage_widget.closeEvent(*args, **kwargs)
+        self.laser_scanner.closeEvent(*args, **kwargs)
+
         if not self.stage_widget.power_meter is None:
             self.stage_widget.plot_thread.terminate()
             # self.stage_widget.pm_reader.kill()

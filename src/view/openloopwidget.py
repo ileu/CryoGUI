@@ -31,7 +31,7 @@ def scream():
     logger.info("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
 
 
-class OpenLoopWidget(QFrame):
+class OpenLoopWidget(QWidget):
     updateValues = pyqtSignal()
     stepAxis = pyqtSignal(float, str)
 
@@ -98,8 +98,8 @@ class OpenLoopWidget(QFrame):
             self.lock_button.click()
 
     def initUI(self):
-        self.setObjectName("OpenLoopWidget")
-        self.setStyleSheet("#OpenLoopWidget {border-top: 3px solid darkgray;}")
+        # self.setObjectName("OpenLoopWidget")
+        # self.setStyleSheet("#OpenLoopWidget {border-top: 3px solid darkgray;}")
         self.setContentsMargins(0, 0, 0, 0)
         self.optimize_button.setStyleSheet(push_button_style)
         self.optimize_button.setFixedSize(100, 30)
@@ -116,23 +116,29 @@ class OpenLoopWidget(QFrame):
         self.cmove_up_button.setStyleSheet(push_button_style)
         self.cmove_up_button.setFixedSize(40, 20)
 
+        # adjust top padding in style sheet
+
+        self.control_bar.setStyleSheet(
+            "#ControlBar {border-top: 3px solid darkgray;  padding-top: 5px;}"
+        )
+
         main_layout = QVBoxLayout()
         main_layout.setSpacing(2)
 
-        main_layout.addWidget(self.control_bar)
         control_layout = QGridLayout()
         control_layout.setSpacing(5)
         main_layout.addLayout(control_layout)
 
-        control_layout.addWidget(self.voltage_widget, 0, 0)
-        control_layout.addWidget(self.frequency_widget, 1, 0)
-        control_layout.addWidget(self.offset_widget, 0, 1)
+        control_layout.addWidget(self.control_bar, 0, 0, 1, 3)
+        control_layout.addWidget(self.voltage_widget, 1, 0)
+        control_layout.addWidget(self.frequency_widget, 2, 0)
+        control_layout.addWidget(self.offset_widget, 1, 1)
         optimize_layout = QHBoxLayout()
         optimize_layout.addWidget(
             self.optimize_button, alignment=Qt.AlignmentFlag.AlignCenter
         )
         optimize_layout.addWidget(self.lock_button)
-        control_layout.addLayout(optimize_layout, 1, 1)
+        control_layout.addLayout(optimize_layout, 2, 1)
 
         step_layout = QVBoxLayout()
         step_layout.setSpacing(0)
@@ -148,7 +154,9 @@ class OpenLoopWidget(QFrame):
         )
 
         step_layout.addLayout(cmove_layout)
-        control_layout.addLayout(step_layout, 0, 2, 2, 1)
+        control_layout.addLayout(step_layout, 1, 2, 2, 1)
+
+        control_layout.setColumnStretch(3, 1)
 
         main_layout.addStretch()
 
@@ -237,9 +245,8 @@ class OpenLoopWidget(QFrame):
 def main():
     logging.basicConfig(level=logging.INFO)
     app = QApplication([])
-    # olw = OpenLoopWidget(axis=DummyAxis(), title="Test", lock_optimize_on_start=False)
-    olw = OpenLoopWidget(lock_optimize_on_start=True)
-    olw.connect_axis(DummyOpenLoopAxis())
+    test = OpenLoopController(axis=DummyOpenLoopAxis())
+    olw = OpenLoopWidget(lock_optimize_on_start=True, controller=test)
     # olw.controller.start_refresh_timer()
     olw.show()
     app.exec()
@@ -247,5 +254,5 @@ def main():
 
 if __name__ == "__main__":
     main()
-    # test = OpenLoopController(axis=DummyOpenLoopAxis())
+
     # test.measure_capacity()

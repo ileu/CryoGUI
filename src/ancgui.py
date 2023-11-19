@@ -14,7 +14,6 @@ from PyQt5.QtWidgets import (
     QGridLayout,
     QButtonGroup,
 )
-from pymeasure.instruments.attocube.anc300 import Axis
 from pymeasure.instruments.attocube import ANC300Controller
 
 from src.controller.openloopcontroller import OpenLoopController
@@ -59,6 +58,12 @@ class ANCGUI(InstrumentWidget):
         optimize_group.addButton(self.low_temp_button)
         optimize_group.addButton(self.high_temp_button)
 
+        self.low_temp_button.setEnabled(False)
+        self.high_temp_button.setEnabled(False)
+        self.fine_optimize_button.setEnabled(False)
+        self.coarse_optimize_button.setEnabled(False)
+        self.gnd_all_button.setEnabled(False)
+
         buttonLayout.addWidget(self.high_temp_button, 0, 0)
         buttonLayout.addWidget(self.low_temp_button, 0, 1)
         buttonLayout.addWidget(self.gnd_all_button, 0, 2)
@@ -95,7 +100,7 @@ class ANCGUI(InstrumentWidget):
         # self.refresh_timer.setInterval(10000)
         # self.refresh_timer.timeout.connect(self.refresh.emit)
 
-    def connect_instrument(
+    def connect_instrument_over_address(
         self, address: str = None, axis: list = None, passwd: str = "123456"
     ) -> bool:
         if not address:
@@ -125,13 +130,25 @@ class ANCGUI(InstrumentWidget):
             return False
 
         logger.info("Connected to ANC300")
-        self.ancController = ancController
+        return self.connect_anc(ancController)
+
+    def connect_anc(
+        self,
+        anc_controller: ANC300Controller,
+    ):
+        self.ancController = anc_controller
         self.statusUpdated.emit("Connected")
 
         for axis_widget in self.axis_widgets.values():
-            axis_widget.connect_axis(getattr(ancController, axis_widget.title))
+            axis_widget.connect_axis(getattr(anc_controller, axis_widget.title))
             axis_widget.activate()
             self.refresh.connect(axis_widget.controller.refresh)
+
+        self.coarse_optimize_button.setEnabled(True)
+        self.fine_optimize_button.setEnabled(True)
+        self.low_temp_button.setEnabled(True)
+        self.high_temp_button.setEnabled(True)
+        self.gnd_all_button.setEnabled(True)
 
         # self.axis_widgets["LX"].connect_keys("a", "d")
         # self.axis_widgets["LY"].connect_keys("w", "s")
@@ -140,6 +157,7 @@ class ANCGUI(InstrumentWidget):
 
         logger.info("ANC300 initialized")
         self.refresh.emit()
+        self.connected.emit(True)
         # self.refresh_timer.start()
         return True
 
@@ -163,7 +181,7 @@ def main():
     central_widget.setLayout(QHBoxLayout())
     v_layout = QVBoxLayout()
     connect_button = QPushButton("Connect")
-    connect_button.clicked.connect(gui.connect_instrument)
+    connect_button.clicked.connect(gui.connect_instrument_over_address)
 
     mode_button = QPushButton("Mode")
     # mode_button.clicked.connnect(lambda: gui.axis_widgets["RZ"].)
@@ -175,10 +193,6 @@ def main():
 
     window.show()
     sys.exit(app.exec())
-
-
-def connect_anc(ancwidget: ANCGUI):
-    ancwidget.connect_instrument("")
 
 
 if __name__ == "__main__":

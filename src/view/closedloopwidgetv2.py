@@ -1,7 +1,14 @@
 import sys
 
 from PyQt5.QtCore import Qt, QThread, QTimer
-from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QVBoxLayout, QHBoxLayout
+from PyQt5.QtWidgets import (
+    QApplication,
+    QWidget,
+    QLabel,
+    QVBoxLayout,
+    QHBoxLayout,
+    QGridLayout,
+)
 
 from src.controller import AMC300Controller
 from src.dummies.dummycontroller import DummyAMC300Controller
@@ -37,7 +44,9 @@ class ClosedLoopWidgetv2(QWidget):
         )
         self.offset_widget = SetWidget(title="Offset", symbols=8, unit="V", top=90)
 
-        self.position_widget = SetWidget(title="Position", symbols=8, unit="um", top=15e3)
+        self.position_widget = SetWidget(
+            title="Position", symbols=8, unit="um", top=15e3
+        )
         self.step_widget = IncrementWidget(title="Step")
 
         self.init_ui()
@@ -108,26 +117,24 @@ class ClosedLoopWidgetv2(QWidget):
         )
         # self.position_display.setFixedSize((self.symbols + len(self.unit)) * 20, 50)
 
-        layout = QVBoxLayout()
-        layout.addWidget(self.control_bar)
+        layout = QGridLayout()
+        layout.addWidget(self.control_bar, 0, 0, 1, 3)
 
-        position_layout = QHBoxLayout()
-
-        position_layout.addWidget(self.position_display, stretch=1)
-        position_layout.addWidget(
+        layout.addWidget(self.position_display, 1, 0)
+        layout.addWidget(
             self.position_widget,
-            stretch=1,
+            1,
+            1,
             alignment=Qt.AlignTop,
         )
-        position_layout.addWidget(self.step_widget, stretch=1)
+        layout.addWidget(self.step_widget, 1, 2)
 
-        control_layout = QHBoxLayout()
-        control_layout.addWidget(self.voltage_widget, stretch=1)
-        control_layout.addWidget(self.frequency_widget, stretch=1)
-        control_layout.addWidget(self.offset_widget, stretch=1)
+        layout.addWidget(self.voltage_widget, 2, 0)
+        layout.addWidget(self.frequency_widget, 2, 1)
+        layout.addWidget(self.offset_widget, 2, 2)
 
-        layout.addLayout(position_layout)
-        layout.addLayout(control_layout)
+        layout.setColumnStretch(3, 1)
+        layout.setRowStretch(3, 1)
         self.setLayout(layout)
 
     def set_position(self, value):
@@ -173,7 +180,7 @@ if __name__ == "__main__":
     window = QWidget()
     layout = QVBoxLayout()
     window.setLayout(layout)
-    for axis in range (3):
+    for axis in range(3):
         clw2 = ClosedLoopWidgetv2(controller=controller, axis_index=axis, unit="um")
         layout.addWidget(clw2)
     window.show()

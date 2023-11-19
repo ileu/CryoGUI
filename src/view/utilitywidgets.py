@@ -13,6 +13,7 @@ from PyQt5.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QStyle,
+    QFrame,
 )
 
 import logging
@@ -224,7 +225,7 @@ class SetWidget(QWidget):
         self.set_button.setEnabled(False)
 
 
-class ControlBar(QWidget):
+class ControlBar(QFrame):
     def __init__(self, title="Title", off_mode="OFF", on_mode="ON"):
         super().__init__()
 
@@ -243,6 +244,8 @@ class ControlBar(QWidget):
         self.initUI()
 
     def initUI(self):
+        self.setObjectName("ControlBar")
+
         self.active_button.setCheckable(True)
         self.active_button.setIcon(
             self.style().standardIcon(QStyle.StandardPixmap.SP_MediaPlay)
@@ -325,9 +328,6 @@ class ControlBar(QWidget):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    window = SetWidget(title="HALLO", unit="m", symbols=7)
+    window = ControlBar(title="HALLO")
     window.show()
-    time.sleep(1)
-    window.value = 5
-    print("DONE")
     sys.exit(app.exec())

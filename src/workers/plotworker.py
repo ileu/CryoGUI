@@ -19,7 +19,14 @@ from pyqtgraph import PlotWidget, mkPen
 class PlotWorker(QtCore.QObject):
     updatedValue = QtCore.pyqtSignal(float)
 
-    def __init__(self, plot_widgets: List[PlotWidget], parent, data_names, data_units):
+    def __init__(
+        self,
+        plot_widgets: List[PlotWidget],
+        parent,
+        data_names,
+        data_units,
+        max_length=0,
+    ):
         """
 
         :param plot_widget:
@@ -32,6 +39,7 @@ class PlotWorker(QtCore.QObject):
         self.data = []
         self.data_names = data_names
         self.data_units = data_units
+        self.max_length = max_length
 
         self._ymin = -1
         self._ymax = 1
@@ -66,6 +74,10 @@ class PlotWorker(QtCore.QObject):
         for i, data, plot_widget in zip(
             range(len(self.plot_widgets)), y_datas, self.plot_widgets
         ):
+            if self.max_length >= 0:
+                if len(self.data[i]) > self.max_length:
+                    self.data[i] = self.data[i][-self.max_length :]
+
             self.data[i].append(data)
             plot_widget.plot(self.data[i], clear=True, pen=mkPen("b"))
             # plot_widget.enableAutoRange("x")

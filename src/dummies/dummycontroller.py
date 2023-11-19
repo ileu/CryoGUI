@@ -6,7 +6,7 @@ import numpy as np
 from PyQt5.QtCore import QObject
 
 from src.controller._quantities import PowerQty
-from src.dummies.dummies import DummyOpenLoopAxis
+from src.dummies.dummies import DummyOpenLoopAxis, DummyClosedLoopAxis
 
 logger = logging.getLogger(__name__)
 
@@ -55,13 +55,13 @@ class DummyAMC300Controller(DummyController, QObject):
         QObject.__init__(self)
         self.ip = ip
 
-        self.axes: List[DummyOpenLoopAxis] = []
+        self.axes: List[DummyClosedLoopAxis] = []
 
         self._position = 0
 
     def connect(self):
         for i in range(3):
-            self.axes.append(DummyOpenLoopAxis(str(i)))
+            self.axes.append(DummyClosedLoopAxis(str(i)))
         return True
 
     def disconnect(self):
