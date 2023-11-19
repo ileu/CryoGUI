@@ -21,7 +21,7 @@ from PyQt5.QtWidgets import (
     QVBoxLayout,
     QDoubleSpinBox,
 )
-from pyqtgraph import PlotWidget, mkPen
+from pyqtgraph import PlotWidget, mkPen, DateAxisItem
 
 from src.controller.attodry800 import AttoDry800Controller
 from src.workers import LogWorker
@@ -67,6 +67,7 @@ class CryoWidget(QWidget):
             "Frequency",
         ]
         self.data_units = ["K", "mbar", "K", "W", "Hz"]
+        self.colors = ["r", "b", "r", "g", "g"]
         data_titles = [
             "sample-temp_K",
             "sample-pres_mbar",
@@ -85,6 +86,7 @@ class CryoWidget(QWidget):
         self.log_worker.moveToThread(self.log_thread)
 
         self.data = [[] for i in range(5)]
+        self.time = []
         self.user_temperature = 4
 
         self.controller_thread = QThread()
@@ -105,6 +107,7 @@ class CryoWidget(QWidget):
         self.update_timer.timeout.connect(self.controller.update_values)
 
         self.connect_button.clicked.connect(self.controller.connect_attodry)
+        self.connect_button.clicked.connect(self.connect_button.setEnabled)
         self.disconnect_button.clicked.connect(self.update_timer.stop)
         self.disconnect_button.clicked.connect(self.controller.disconnect_attodry)
         self.base_temperature_button.clicked.connect(
@@ -227,14 +230,18 @@ class CryoWidget(QWidget):
         self.set_pid_button = QPushButton("Set PID")
         controller_layout.addWidget(self.set_pid_button, 2, 2)
 
+
         self.p_edit = QDoubleSpinBox()
         controller_layout.addWidget(self.p_edit, 2, 3)
+        self.p_edit.setEnabled(False)
 
         self.i_edit = QDoubleSpinBox()
         controller_layout.addWidget(self.i_edit, 2, 4)
+        self.i_edit.setEnabled(False)
 
         self.d_edit = QDoubleSpinBox()
         controller_layout.addWidget(self.d_edit, 2, 5)
+        self.d_edit.setEnabled(False)
 
         self.break_valve_button = QPushButton("Break Sample Valve")
         # self.break_valve_button.clicked.connect(
@@ -258,7 +265,7 @@ class CryoWidget(QWidget):
 
         for i, plot_widget in enumerate(self.plot_widgets):
             plot_widget.showGrid(x=True, y=True, alpha=0.1)
-            # plot_widget.getAxis("bottom").setLabel("Time", units="s")
+            plot_widget.getAxis("bottom").setLabel("Time", units="s")
             plot_widget.getAxis("left").setLabel(
                 self.data_names[i] + f" / {self.data_units[i]}"
             )
@@ -279,8 +286,13 @@ class CryoWidget(QWidget):
             plot_widget.setStyleSheet(
                 "QFrame {background-color: white; border: 2px solid black;}"
             )
-            # if i != 0:
-            #     plot_widget.setXLink(self.plot_widgets[0])
+            # put datetime axis as xaxis
+            datetime_axis = DateAxisItem(orientation="bottom")
+            datetime_keys = list(datetime_axis.zoomLevels.keys())
+            datetime_axis.zoomLevels[datetime_keys[-1]] = datetime_axis.zoomLevels[datetime_keys[-2]]
+            plot_widget.getPlotItem().setAxisItems({"bottom": datetime_axis})
+            if i != 0:
+                plot_widget.setXLink(self.plot_widgets[0])
 
         plot_layout = QGridLayout()
 
@@ -361,31 +373,22 @@ class CryoWidget(QWidget):
             )
 
     def plot_data(self, new_data_points):
-        for data, data_point, plot_widget in zip(
-            self.data, new_data_points, self.plot_widgets
+        self.time.append(time.time())
+        for i, data, data_point, plot_widget in zip(
+            range(len(new_data_points)), self.data, new_data_points, self.plot_widgets
         ):
             # print(data)
             item = plot_widget.getPlotItem()
             data.append(data_point)
             if len(data) > 4e4:
                 data.pop(0)
-            item.plot(data, clear=True)
-
-    # def log_data(self, new_data_points):
-    #     with open(
-    #         self.log_file_location,
-    #         "a",
-    #     ) as f:
-    #         line = str(time.time())
-    #         line += ",".join(map(str, new_data_points))
-    #         f.write(line + "\n")
-    #         f.flush()
+            item.plot(self.time, data, clear=True, pen=mkPen(color=self.colors[i]))
 
     def closeEvent(self, *args, **kwargs):
         super().closeEvent(*args, **kwargs)
         print("closing")
         self.update_timer.stop()
-        time.sleep(1)
+        time.sleep(.5)
 
         # self.plot_thread.exit()
         # self.plot_thread.wait()
