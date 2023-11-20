@@ -174,7 +174,7 @@ class OpenLoopWidget(QWidget):
         self.offset_widget.set_input_text(values[2])
 
     def connect_axis(self, axis: Axis):
-        self.controller.axis = axis
+        self.controller.set_axis(axis)
         self.controller.modeUpdated.connect(self.control_bar.set_mode)
         self.controller.valuesUpdated.connect(self.refresh_values)
 
@@ -189,17 +189,12 @@ class OpenLoopWidget(QWidget):
         )
         self.step_widget.valueChanged.connect(self.controller.step_axis)
         self.cmove_down_button.pressed.connect(
-            lambda: self.controller.step_axis(1, "up")
+            lambda: self.controller.continous_move("up")
         )
-        # self.cmove_down_button.released.connect(
-        #     lambda: self.controller.step_axis(1, "up")
-        # )
         self.cmove_up_button.pressed.connect(
-            lambda: self.controller.step_axis(1, "down")
+            lambda: self.controller.continous_move("down")
         )
-        # self.cmove_up_button.released.connect(
-        #     lambda: self.controller.step_axis(1, "down")
-        # )
+
         self.activate()
         self.controller.statusUpdated.emit("Ready")
 

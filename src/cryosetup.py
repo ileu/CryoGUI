@@ -75,14 +75,6 @@ class CryoSetup(WindowSidebarTabs):
 
         self.tabWidget.setCurrentIndex(0)
 
-    def keyPressEvent(self, event):
-        print(event.key())
-        super().keyPressEvent(event)
-
-    def keyReleaseEvent(self, event):
-        print(event.key())
-        super().keyReleaseEvent(event)
-
     def instrument_connected(self, inst):
         self.inst_control.add_instrument_tab(inst)
         if type(inst).__name__ in self.laser_scanner.LASER_ALLOWED:

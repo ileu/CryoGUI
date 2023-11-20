@@ -118,12 +118,12 @@ class ANCGUI(InstrumentWidget):
             axis = self.axis
 
         try:
-            # ancController = DummyANC300Controller(
-            #     adapter=address, axisnames=axis, passwd=passwd
-            # )
-            ancController: ANC300Controller = ANC300Controller(
+            ancController = DummyANC300Controller(
                 adapter=address, axisnames=axis, passwd=passwd
             )
+            # ancController: ANC300Controller = ANC300Controller(
+            #     adapter=address, axisnames=axis, passwd=passwd
+            # )
         except Exception as e:
             logger.error(f"Connection failed: {e}")
             self.statusUpdated.emit(f"Connection failed: {e}")
@@ -150,10 +150,12 @@ class ANCGUI(InstrumentWidget):
         self.high_temp_button.setEnabled(True)
         self.gnd_all_button.setEnabled(True)
 
-        # self.axis_widgets["LX"].connect_keys("a", "d")
-        # self.axis_widgets["LY"].connect_keys("w", "s")
-        # self.axis_widgets["RX"].connect_keys("right", "left")
-        # self.axis_widgets["RY"].connect_keys("down", "up")
+        self.axis_widgets["LX"].connect_keys(65, 68)  # A, D
+        self.axis_widgets["LY"].connect_keys(87, 83)  # W, S
+        # self.axis_widgets["LZ"].connect_keys(81, 69) # Q, E
+        self.axis_widgets["RX"].connect_keys(74, 76)  # J, L
+        self.axis_widgets["RY"].connect_keys(73, 75)  # I, K
+        # self.axis_widgets["RZ"].connect_keys(85, 79) # U, O
 
         logger.info("ANC300 initialized")
         self.refresh.emit()

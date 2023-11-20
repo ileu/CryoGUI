@@ -36,9 +36,21 @@ class Window(QWidget):
         self.button.setAutoRepeat(True)
         self.button.setAutoRepeatDelay(100)
         self.button.setAutoRepeatInterval(100)
+        self.button.pressed.connect(self.button_pressed)
+        self.button.released.connect(self.button_realeased)
+        self.button.clicked.connect(self.button_clicked)
 
     def start(self):
         self.worker.start()
+
+    def button_realeased(self):
+        print("Button released")
+
+    def button_pressed(self):
+        print("Button pressed")
+
+    def button_clicked(self):
+        print("Button clicked")
 
     def keyPressEvent(self, a0):
         if a0.nativeVirtualKey() in [65, 68, 83, 87, 98, 100, 102, 104]:

@@ -145,6 +145,14 @@ class DummyOpenLoopAxis:
         if "c" in question:
             return self.capacity
 
+    def move_raw(self, value):
+        logger.info(f"Moving by {value}")
+        return True
+
+    def stop(self):
+        logger.info("Stopping")
+        return True
+
 
 if __name__ == "__main__":
     dolaxis = DummyOpenLoopAxis()

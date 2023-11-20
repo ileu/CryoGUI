@@ -27,7 +27,7 @@ class StageGui(QWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.amc_widget = AMCGUI()
+        # self.amc_widget = AMCGUI()
 
         self.anc_widget = ANCGUI()
         self.anc = None
@@ -107,13 +107,6 @@ class StageGui(QWidget):
                 QTimer.singleShot(2000, loop.quit)
                 loop.exec()
 
-    # def updatePower(self):
-    #     pow_curr = self.last_power
-    #     self.power_array = np.append(self.power_array[-100:], pow_curr)
-    # datapoints = len(self.power_array)
-    # if datapoints > self.datapoints:
-    #     self.power_array = self.power_array[-int(self.datapoints):]$
-
     # def connect_amc(self, amc):
     #     self.amc = amc
     #     self.amc_widget.connect_amc(amc)
@@ -190,8 +183,7 @@ class StageGui(QWidget):
                 channel = 2
             elif self.power_meter_channel_box.currentText() == "CH4":
                 channel = 3
-            # TODO: reconnecting
-            # self.connect_pm(self.parent.inst_connection.connected_instruments[address],channel=channel)
+            # TODO: reconnecting  # self.connect_pm(self.parent.inst_connection.connected_instruments[address],channel=channel)
         else:
             # reconecting
 
@@ -237,7 +229,7 @@ class StageGui(QWidget):
         stage_layout = QGridLayout()
         stage_layout.addWidget(self.anc_widget, 0, 0, 2, 1)
         stage_layout.addWidget(self.power_frame, 0, 1, 1, 1)
-        stage_layout.addWidget(self.amc_widget, 1, 1, 1, 1)
+        # stage_layout.addWidget(self.amc_widget, 1, 1, 1, 1)
 
         stage_layout.setColumnStretch(0, 0)
         stage_layout.setColumnStretch(1, 1)

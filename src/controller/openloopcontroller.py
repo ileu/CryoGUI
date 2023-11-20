@@ -1,4 +1,4 @@
-import threading
+import math
 import time
 
 from PyQt5.QtCore import QObject, pyqtSignal, QTimer
@@ -6,6 +6,9 @@ from PyQt5.QtCore import QObject, pyqtSignal, QTimer
 import logging
 
 logger = logging.getLogger(__name__)
+
+SHORT_WAIT = 150
+LONG_WAIT = 600
 
 
 class OpenLoopController(QObject):
@@ -19,6 +22,13 @@ class OpenLoopController(QObject):
         super().__init__(parent)
         self.axis = axis
         self.activated = False
+        self.continous_move_timer = QTimer()
+        self.continous_move_timer.setInterval(LONG_WAIT)
+        self.continous_move_timer.setSingleShot(True)
+
+    def set_axis(self, axis):
+        self.axis = axis
+        self.continous_move_timer.timeout.connect(axis.stop)
 
     def refresh(self):
         # print("refresh")
@@ -72,6 +82,26 @@ class OpenLoopController(QObject):
             self.statusUpdated.emit("Ready")
         except Exception as e:
             logger.warning(f"Error stepping axis: {e}")
+
+    def continous_move(self, direction: str):
+        logger.debug(f"Continous move {direction}")
+        if not self.activated:
+            logger.warning("Axis not activated")
+            self.statusUpdated.emit("Axis not activated")
+            return
+        self.statusUpdated.emit("Moving")
+        if self.axis.offset_voltage != 0:
+            self.update_mode("stp+")
+        else:
+            self.update_mode("stp")
+
+        if not self.continous_move_timer.isActive():
+            self.continous_move_timer.start()
+            self.step_axis(1, direction)
+        else:
+            if self.continous_move_timer.interval() != SHORT_WAIT:
+                self.step_axis(math.inf, direction)
+            self.continous_move_timer.start(SHORT_WAIT)
 
     def update_mode(self, mode: str = None):
         if mode is None:
