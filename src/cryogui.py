@@ -4,7 +4,8 @@ import sys
 import time
 from typing import List
 
-from PyQt5.QtCore import QThread, QTimer, pyqtSignal
+import numpy as np
+from PyQt5.QtCore import QThread, QTimer, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QIntValidator
 from PyQt5.QtSerialPort import QSerialPortInfo
 from PyQt5.QtWidgets import (
@@ -21,7 +22,7 @@ from PyQt5.QtWidgets import (
     QVBoxLayout,
     QDoubleSpinBox,
 )
-from pyqtgraph import PlotWidget, mkPen, DateAxisItem
+from pyqtgraph import PlotWidget, mkPen, DateAxisItem, PlotDataItem
 
 from src.controller.attodry800 import AttoDry800Controller
 from src.workers import LogWorker
@@ -85,6 +86,7 @@ class CryoWidget(QWidget):
         self.log_worker = LogWorker("", self, data_titles)
         self.log_worker.moveToThread(self.log_thread)
 
+        # self.data = [np.random.rand(60 * 60 * 24 * 7).tolist() for i in range(5)]
         self.data = [[] for i in range(5)]
         self.time = []
         self.user_temperature = 4
@@ -105,6 +107,7 @@ class CryoWidget(QWidget):
         self.update_timer = QTimer()
         self.update_timer.setInterval(50)
         self.update_timer.timeout.connect(self.controller.update_values)
+        self.update_timer.timeout.connect(self.plot_data)
 
         self.connect_button.clicked.connect(self.controller.connect_attodry)
         self.connect_button.clicked.connect(self.connect_button.setEnabled)
@@ -114,7 +117,7 @@ class CryoWidget(QWidget):
             self.controller.attodry.goToBaseTemperature
         )
 
-        self.controller.updatedValues.connect(self.plot_data)
+        self.controller.updatedValues.connect(self.update_data)
         self.controller.statusUpdated.connect(self.action_monitor.append)
         self.controller.connectedToInstrument.connect(self.connect_controller)
         self.controller.disconnectedInstrument.connect(self.disconnect_controller)
@@ -230,7 +233,6 @@ class CryoWidget(QWidget):
         self.set_pid_button = QPushButton("Set PID")
         controller_layout.addWidget(self.set_pid_button, 2, 2)
 
-
         self.p_edit = QDoubleSpinBox()
         controller_layout.addWidget(self.p_edit, 2, 3)
         self.p_edit.setEnabled(False)
@@ -247,7 +249,7 @@ class CryoWidget(QWidget):
         # self.break_valve_button.clicked.connect(
         #     self.controller.attodry.toggleBreakVac800Valve
         # )
-        controller_layout.addWidget(self.break_valve_button, 0, 5)
+        # controller_layout.addWidget(self.break_valve_button, 0, 5)
 
         self.confirm_button = QPushButton("Confirm")
         self.confirm_button.clicked.connect(self.controller.attodry.Confirm)
@@ -278,7 +280,6 @@ class CryoWidget(QWidget):
             plot_widget.getAxis("top").setStyle(showValues=False)
             plot_widget.getAxis("top").setPen(mkPen(color="k"))
             plot_widget.setBackground("w")  # White background
-            plot_widget.getPlotItem().setContentsMargins(0, 0, 25, 10)
             plot_widget.enableAutoRange(x=True, y=True)
             # plot_widget.setStyleSheet(
             #     "border: 0px solid gray; border-radius: 5px; padding: 2px; background-color: white"
@@ -289,8 +290,15 @@ class CryoWidget(QWidget):
             # put datetime axis as xaxis
             datetime_axis = DateAxisItem(orientation="bottom")
             datetime_keys = list(datetime_axis.zoomLevels.keys())
-            datetime_axis.zoomLevels[datetime_keys[-1]] = datetime_axis.zoomLevels[datetime_keys[-2]]
-            plot_widget.getPlotItem().setAxisItems({"bottom": datetime_axis})
+            datetime_axis.zoomLevels[datetime_keys[-1]] = datetime_axis.zoomLevels[
+                datetime_keys[-2]
+            ]
+            plot_item: PlotDataItem = plot_widget.getPlotItem()
+            plot_item.setContentsMargins(0, 0, 25, 10)
+            plot_item.setAxisItems({"bottom": datetime_axis})
+            plot_item.setDownsampling(auto=True)
+            plot_item.setClipToView()
+
             if i != 0:
                 plot_widget.setXLink(self.plot_widgets[0])
 
@@ -372,23 +380,27 @@ class CryoWidget(QWidget):
                 f"Failed to disconnect from serial port: {str(e)}"
             )
 
-    def plot_data(self, new_data_points):
+    def update_data(self, new_data_points):
         self.time.append(time.time())
-        for i, data, data_point, plot_widget in zip(
-            range(len(new_data_points)), self.data, new_data_points, self.plot_widgets
+        self.user_temperature = new_data_points.pop(-1)
+        for i, data in enumerate(new_data_points):
+            self.data[i].append(data)
+            if len(self.data[i]) > 4e4:
+                self.data[i].pop(0)
+
+    def plot_data(self):
+        for i, data, plot_widget in zip(
+            range(len(self.plot_widgets)), self.data, self.plot_widgets
         ):
             # print(data)
             item = plot_widget.getPlotItem()
-            data.append(data_point)
-            if len(data) > 4e4:
-                data.pop(0)
-            item.plot(self.time, data, clear=True, pen=mkPen(color=self.colors[i]))
+            item.plot(data, clear=True, pen=mkPen(color=self.colors[i]))
 
     def closeEvent(self, *args, **kwargs):
         super().closeEvent(*args, **kwargs)
         print("closing")
         self.update_timer.stop()
-        time.sleep(.5)
+        time.sleep(0.5)
 
         # self.plot_thread.exit()
         # self.plot_thread.wait()
