@@ -22,6 +22,9 @@ class AttoDry800Controller(QObject):
     connectedToInstrument = pyqtSignal()
     disconnectedInstrument = pyqtSignal()
     statusUpdated = pyqtSignal(str)
+    isCoolingDown = pyqtSignal(bool)
+    isWarmingUp = pyqtSignal(bool)
+    isControllingTemperature = pyqtSignal(bool)
 
     def __init__(self, setup_version=Cryostats.ATTODRY800, com_port=None):
         super().__init__()
@@ -35,6 +38,10 @@ class AttoDry800Controller(QObject):
             self.attodry.getUserTemperature,
         ]
         self.has_begun = False
+        self.pumping = False
+        self.temperature_control = False
+        self.cooling = False
+        self.heating = False
         # self.refresh_thread = QThread()
         # self.refresh_thread.start()
 
@@ -58,6 +65,20 @@ class AttoDry800Controller(QObject):
         except Exception as e:
             print(f"Something went wrong {e}")
             return False
+
+    def checkStatus(self):
+        try:
+            pumping = self.attodry.isPumping()
+            temperature_control = self.attodry.isControllingTemperature()
+            cooling = self.attodry.isGoingToBaseTemperature()
+            heating = self.attodry.isSampleExchangeInProgress()
+        except Exception as e:
+            print(f"Couldn't check status of Cryo: {e}")
+            return
+
+        if temperature_control != self.temperature_control:
+            self.isControllingTemperature.emit(temperature_control)
+            self.temperature_control = temperature_control
 
     def update_values(self):
         data = []
